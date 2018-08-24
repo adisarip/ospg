@@ -1,49 +1,68 @@
+#include <cstring>
 #include <unistd.h>
-#include <termios.h>
 #include <iostream>
 #include <string>
+#include "TermUtils.H"
+#include "FileSystem.H"
 using namespace std;
 
 int main(int argc, char* argv[])
 {
-    struct termios old_term_settings;
-    struct termios new_term_settings;
-    unsigned char in_buff [8];
+    char in_buff;
+    int sCursorBound = 0;
+    int sCursorPos = 0;
+    string sDirPath(".");
 
-    tcgetattr(STDIN_FILENO, &old_term_settings);
-
-    new_term_settings = old_term_settings;
-    //new_term_settings.c_lflag &= ~ECHO;
-    new_term_settings.c_lflag &= ~ICANON;
-    new_term_settings.c_cc[VMIN] = 1;
-    new_term_settings.c_cc[VTIME] = 0;
-
-    // Save the cursor and switch to alternate screen buffer
-    cout << "\e[?1049h" << endl;
-
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &new_term_settings) != 0)
+    if (argc > 2)
     {
-        cerr << "Could Not Set New Terminal Attributes" << endl;
+        cerr << "ERROR: Invalid Command" << endl;
+        return FAILURE;
+    }
+    else if (argc == 2)
+    {
+        sDirPath = string(argv[1]);
     }
     else
     {
-        cout << "New Terminal Attributes Set. ECHO is OFF" << endl;
-        while(1)
+        sDirPath = ".";
+    }
+
+    FileSystem fs(sDirPath);
+
+    // Switch to alternate screen buffer
+    setup_alternate_terminal();
+
+    // Display initial directory listing
+    fs.traverse();
+    sCursorBound = fs.display();
+    cout << CURSOR_TOP << flush;
+    sCursorPos = CURSOR_START_POS;
+
+    while(1)
+    {
+        // Read each character in non-cannonical mode
+        read (STDIN_FILENO, &in_buff, 1);
+        if (in_buff == CTRL_C || in_buff == QUIT)
         {
-            // Read each character in non-cannonical mode
-            read (STDIN_FILENO, &in_buff, 1);
-            if (in_buff[0] == 3 || in_buff[0] == 'q')
-            {
-                break; // exit on Ctrl-C
-            }
-            else
-            {
-                // list the directories
-            }
+            cout << CLEAR_ALT_SCREEN_BUFFER << flush;
+            break;
+        }
+        else if (in_buff == KEY_ESC)
+        {
+            evaluate_arrow_keys(sCursorPos, sCursorBound);
+        }
+        else if (in_buff == KEY_ENTER)
+        {
+            //@TODO
+        }
+        else
+        {
+            cout << in_buff << flush;
         }
     }
 
-    write (STDOUT_FILENO, "\e[?1049l", 8);
-    tcsetattr(STDIN_FILENO, TCSANOW, &old_term_settings);
+    // Revert from the alternate screen buffer and restore the Terminal
+    restore_terminal();
+
     return(0);
 }

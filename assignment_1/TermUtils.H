@@ -1,0 +1,44 @@
+
+#ifndef TERMUTILS_H
+#define TERMUTILS_H
+
+#define SUCCESS 0
+#define FAILURE -1
+
+// Quit terminal
+#define CTRL_C '\x03' // Ctrl-C
+#define QUIT   '\x71' // 'q'
+
+#define KEY_ESC   '\x1B'
+#define KEY_ENTER '\n'
+#define KEY_UP    'A'
+#define KEY_DOWN  'B'
+#define KEY_RIGHT 'C'
+#define KEY_LEFT  'D'
+
+#define ESC_SEQ_START '['
+#define CURSOR_START_POS 1
+
+// Escape sequences controlling the termninal
+#define SWITCH_ALT_SCREEN_BUFFER  "\e[?1049h"  // save the cursor & switch to alternate screen buffer
+#define SWITCH_NORM_SCREEN_BUFFER "\e[?1049l"  // restore the cursor & switch to normal screen buffer
+#define CLEAR_ALT_SCREEN_BUFFER   "\e[?2J"     // clear the alternate screen buffer
+#define ENABLE_ALT_SCREEN_SCROLL  "\e[?1007h"  // enable cursor up/down in alternate screen buffer
+#define DISABLE_ALT_SCREEN_SCROLL "\e[?1007l"  // disable cursor up/down in alternate screen buffer
+#define CURSOR_TOP                "\e[1;1H"
+#define CURSOR_UP                 "\e[1A"
+#define CURSOR_DOWN               "\e[1B"
+#define CURSOR_RIGHT              "\e[1C"
+#define CURSOR_LEFT               "\e[1D"
+#define CURSOR_BOTTOM             "\e[1010h"
+
+
+int  setup_alternate_terminal();
+int  restore_terminal();
+void evaluate_arrow_keys(int& cpos, int& cbound);
+int set_cursor_bounds(int top, int bottom);
+
+#endif /* TERMUTILS_H */
+
+
+
