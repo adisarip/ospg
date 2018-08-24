@@ -15,7 +15,7 @@ class FileSystem
     void setPath(string dirPath);
     int traverse();
     int display(); // return the #lines displayed
-    int evaluateAndDisplay(int& cpos, int& cbound);
+    void evaluateAndDisplay(int& cpos, int& cbound);
     void snapshot();
 
   private:

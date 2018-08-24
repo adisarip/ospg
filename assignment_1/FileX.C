@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     int sCursorBound = 0;
     int sCursorPos = 0;
     int rc = SUCCESS;
-    string sDirPath("./");
+    string sDirPath;
 
     if (argc > 2)
     {
@@ -22,10 +22,24 @@ int main(int argc, char* argv[])
     else if (argc == 2)
     {
         sDirPath = string(argv[1]);
+        if (sDirPath[0] == '.')
+        {
+            cout << "Provide Absolute Path or Nothing" << endl;
+            return -1;
+        }
     }
     else
     {
-        sDirPath = "./";
+        // get the current working directory
+        char* pCwd = getenv("PWD");
+        if (pCwd != NULL)
+        {
+            sDirPath = string(pCwd) + "/";
+        }
+        else
+        {
+            sDirPath = "./";
+        }
     }
 
     FileSystem fs(sDirPath);
@@ -67,5 +81,5 @@ int main(int argc, char* argv[])
     // Revert from the alternate screen buffer and restore the Terminal
     restore_terminal();
 
-    return(0);
+    return 0;
 }

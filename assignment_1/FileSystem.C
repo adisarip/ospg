@@ -11,6 +11,7 @@ FileSystem::FileSystem(string dirPath)
 :mPath(dirPath)
 ,mRootPath(dirPath)
 {
+    mDirEntries.clear();
 }
 
 FileSystem::~FileSystem()
@@ -42,9 +43,7 @@ int FileSystem::traverse()
         sDirEntries.clear();
         while (NULL != (pDirEntry = readdir(pDir)))
         {
-            //cout << pDirEntry->d_fileno << " : "<< pDirEntry->d_name << " : " << (int)pDirEntry->d_type << endl;
             sName = pDirEntry->d_name;
-            //mDirEntries.push_back(sName);
             if (pDirEntry->d_type == DT_DIR)
             {
                 sDirEntries.push_back(sName + "/");
@@ -72,20 +71,28 @@ int FileSystem::display()
     {
         cout << s << endl;
     }
-    //cout << mDirEntries.size() << endl;
-    //cout << mPath << endl;
+    //cout << mDirEntries.size() << endl; // DEBUG
+    //cout << mPath << endl;              // DEBUG
     return mDirEntries.size();
 }
 
-int FileSystem::evaluateAndDisplay(int& cpos, int& cbound)
+void FileSystem::evaluateAndDisplay(int& cpos, int& cbound)
 {
-    int rc = SUCCESS;
     string sCurrentDir = mDirEntries[cpos-1];
     if (sCurrentDir.back() == '/')
     {
         if (sCurrentDir == "./")
         {
             // skip - no need to append current directory
+            return;
+        }
+        else if (sCurrentDir == "../")
+        {
+            // Slice the last directory
+            int pos = mPath.find_last_of("/");
+            mPath = mPath.substr(0, pos);
+            pos = mPath.find_last_of("/");
+            mPath = mPath.substr(0, pos+1);
         }
         else
         {
@@ -99,11 +106,7 @@ int FileSystem::evaluateAndDisplay(int& cpos, int& cbound)
         cout << CURSOR_TOP << flush;
         cpos = CURSOR_START_POS;
     }
-    else
-    {
-        rc = FAILURE;
-    }
-    return rc;
+    return;
 }
 
 void FileSystem::snapshot()
