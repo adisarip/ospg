@@ -11,7 +11,8 @@ int main(int argc, char* argv[])
     char in_buff;
     int sCursorBound = 0;
     int sCursorPos = 0;
-    string sDirPath(".");
+    int rc = SUCCESS;
+    string sDirPath("./");
 
     if (argc > 2)
     {
@@ -24,7 +25,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        sDirPath = ".";
+        sDirPath = "./";
     }
 
     FileSystem fs(sDirPath);
@@ -53,7 +54,9 @@ int main(int argc, char* argv[])
         }
         else if (in_buff == KEY_ENTER)
         {
-            //@TODO
+            // Evaluate and display the directory contents
+            //cout << "Enter" << flush;
+            fs.evaluateAndDisplay(sCursorPos, sCursorBound);
         }
         else
         {

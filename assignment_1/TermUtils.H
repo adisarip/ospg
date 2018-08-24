@@ -31,7 +31,7 @@
 #define CURSOR_RIGHT              "\e[1C"
 #define CURSOR_LEFT               "\e[1D"
 #define CURSOR_BOTTOM             "\e[1010h"
-
+#define CLEAR_SCREEN              "\e[2J"
 
 int  setup_alternate_terminal();
 int  restore_terminal();

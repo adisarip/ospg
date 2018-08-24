@@ -6,9 +6,6 @@
 #include <vector>
 using namespace std;
 
-#define SUCCESS 0
-#define FAILURE -1
-
 class FileSystem
 {
   public:
@@ -18,6 +15,7 @@ class FileSystem
     void setPath(string dirPath);
     int traverse();
     int display(); // return the #lines displayed
+    int evaluateAndDisplay(int& cpos, int& cbound);
     void snapshot();
 
   private:
