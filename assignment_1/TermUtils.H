@@ -2,6 +2,9 @@
 #ifndef TERMUTILS_H
 #define TERMUTILS_H
 
+#include <termios.h>
+#include <unistd.h>
+
 #define SUCCESS 0
 #define FAILURE -1
 
@@ -11,12 +14,11 @@
 
 #define KEY_ESC   '\x1B'
 #define KEY_ENTER '\n'
-#define KEY_UP    'A'
-#define KEY_DOWN  'B'
-#define KEY_RIGHT 'C'
-#define KEY_LEFT  'D'
+#define KEY_UP    "[A"
+#define KEY_DOWN  "[B"
+#define KEY_RIGHT "[C"
+#define KEY_LEFT  "[D"
 
-#define ESC_SEQ_START '['
 #define CURSOR_START_POS 1
 
 // Escape sequences controlling the termninal
@@ -32,11 +34,12 @@
 #define CURSOR_LEFT               "\e[1D"
 #define CURSOR_BOTTOM             "\e[1010h"
 #define CLEAR_SCREEN              "\e[2J"
+#define FETCH_CURSOR_POSITION     "\e[6n"
 
 int  setup_alternate_terminal();
 int  restore_terminal();
 void evaluate_arrow_keys(int& cpos, int& cbound);
-int set_cursor_bounds(int top, int bottom);
+int  fetch_cursor_position(); // returns cursor line number
 
 #endif /* TERMUTILS_H */
 

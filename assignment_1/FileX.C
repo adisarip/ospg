@@ -1,5 +1,4 @@
 #include <cstring>
-#include <unistd.h>
 #include <iostream>
 #include <string>
 #include "TermUtils.H"
@@ -8,10 +7,8 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-    char in_buff;
-    int sCursorBound = 0;
-    int sCursorPos = 0;
-    int rc = SUCCESS;
+    char c;
+    char in_buff[8];
     string sDirPath;
 
     if (argc > 2)
@@ -49,37 +46,44 @@ int main(int argc, char* argv[])
 
     // Display initial directory listing
     fs.traverse();
-    sCursorBound = fs.display();
+    fs.display();
     cout << CURSOR_TOP << flush;
-    sCursorPos = CURSOR_START_POS;
 
+    // Read each character in non-cannonical mode
+    // Infinite loop - press 'q' or Ctrl-C to break.
     while(1)
     {
-        // Read each character in non-cannonical mode
-        read (STDIN_FILENO, &in_buff, 1);
-        if (in_buff == CTRL_C || in_buff == QUIT)
+        cin.clear();
+        fflush(stdin);
+        read (STDIN_FILENO, &c, 1);
+        if (c == CTRL_C || c == QUIT)
         {
             cout << CLEAR_ALT_SCREEN_BUFFER << flush;
             break;
         }
-        else if (in_buff == KEY_ESC)
+        else if (c == KEY_ESC)
         {
-            evaluate_arrow_keys(sCursorPos, sCursorBound);
+            read (STDIN_FILENO, &in_buff, 8);
+            //cout << in_buff << endl;
+            fs.evaluateArrowKeys(string(in_buff));
         }
-        else if (in_buff == KEY_ENTER)
+        else if (c == KEY_ENTER)
         {
-            // Evaluate and display the directory contents
-            //cout << "Enter" << flush;
-            fs.evaluateAndDisplay(sCursorPos, sCursorBound);
+            //cout << "c: " << c << ":"<< endl;
+            fs.evaluateEnterKey();
+        }
+        else if (c == 'h' || c == 'H')
+        {
+            //cout << c << endl;
+            fs.restart();
         }
         else
         {
-            cout << in_buff << flush;
+            // Do nothing
         }
     }
 
     // Revert from the alternate screen buffer and restore the Terminal
     restore_terminal();
-
     return 0;
 }

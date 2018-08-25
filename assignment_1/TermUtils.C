@@ -1,6 +1,4 @@
 #include <iostream>
-#include <termios.h>
-#include <unistd.h>
 #include <string>
 #include "TermUtils.H"
 using namespace std;
@@ -38,6 +36,7 @@ int restore_terminal()
 {
     int rc = SUCCESS;
     // Switch back from the alternate screen buffer
+    cout << CLEAR_ALT_SCREEN_BUFFER << flush;
     cout << SWITCH_NORM_SCREEN_BUFFER << flush;
 
     // Restore the original terminal
@@ -48,36 +47,35 @@ int restore_terminal()
         cerr << "Could Not Restore the Terminal Attributes" << endl;
         rc = FAILURE;
     }
+    cout << flush << endl;
     return rc;
 }
 
-void evaluate_arrow_keys(int& cpos, int& cbound)
+
+int fetch_cursor_position()
 {
-    char c;
-    read (STDIN_FILENO, &c, 1);
-    if (c == ESC_SEQ_START)
+    struct termios save,raw;
+    char buff[8];
+    string s;
+    int start_pos, end_pos;
+    int sCursorPos;
+
+    tcgetattr(0,&save);
+    cfmakeraw(&raw);
+    tcsetattr(0,TCSANOW,&raw);
+
+    if (isatty(STDIN_FILENO))
     {
-        read (STDIN_FILENO, &c, 1);
-        if (c == KEY_UP)
-        {
-            if (cpos > 1)
-            {
-                cout << CURSOR_UP << flush;
-                cpos--;
-            }
-        }
-        else if (c == KEY_DOWN)
-        {
-            if (cpos < cbound)
-            {
-                cout << CURSOR_DOWN << flush;
-                cpos++;
-            }
-        }
-        else
-        {
-            // do nothing - right and left arrow keys are disabled
-        }
+        write (STDOUT_FILENO, FETCH_CURSOR_POSITION, 4);
+        read (STDIN_FILENO ,buff ,sizeof(buff));
+
+        s = string(buff);
+        start_pos = s.find_last_of("[")+1;
+        end_pos = s.find_last_of(";");
+        s = s.substr(start_pos, end_pos-start_pos);
+        sCursorPos = atoi(s.c_str());
     }
+    tcsetattr(0,TCSANOW,&save);
+    return sCursorPos;
 }
 

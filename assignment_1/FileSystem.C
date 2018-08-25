@@ -12,6 +12,8 @@ FileSystem::FileSystem(string dirPath)
 ,mRootPath(dirPath)
 {
     mDirEntries.clear();
+    mBackDirStack.clear();
+    mFwdDirStack.clear();
 }
 
 FileSystem::~FileSystem()
@@ -22,6 +24,7 @@ FileSystem::~FileSystem()
 void FileSystem::setPath(string dirPath)
 {
     mPath = dirPath;
+    return;
 }
 
 int FileSystem::traverse()
@@ -64,21 +67,35 @@ int FileSystem::traverse()
     return sRC;
 }
 
-int FileSystem::display()
+void FileSystem::display()
 {
     // display the contents of the directory
     for (string& s : mDirEntries)
     {
         cout << s << endl;
     }
-    //cout << mDirEntries.size() << endl; // DEBUG
-    //cout << mPath << endl;              // DEBUG
-    return mDirEntries.size();
+    debug();
+    return;
 }
 
-void FileSystem::evaluateAndDisplay(int& cpos, int& cbound)
+
+void FileSystem::run()
 {
+    // re-traverse and display the contents
+    traverse();
+    cout << CLEAR_SCREEN << flush;
+    cout << CURSOR_TOP << flush;
+    display();
+    cout << CURSOR_TOP << flush;
+    return;
+}
+
+
+void FileSystem::evaluateEnterKey()
+{
+    int cpos = fetch_cursor_position();
     string sCurrentDir = mDirEntries[cpos-1];
+
     if (sCurrentDir.back() == '/')
     {
         if (sCurrentDir == "./")
@@ -88,6 +105,9 @@ void FileSystem::evaluateAndDisplay(int& cpos, int& cbound)
         }
         else if (sCurrentDir == "../")
         {
+            // save the current directory in backward dir stack
+            mBackDirStack.push_back(mPath);
+
             // Slice the last directory
             int pos = mPath.find_last_of("/");
             mPath = mPath.substr(0, pos);
@@ -96,20 +116,96 @@ void FileSystem::evaluateAndDisplay(int& cpos, int& cbound)
         }
         else
         {
+            // save the current directory in backward dir stack
+            mBackDirStack.push_back(mPath);
             mPath = mPath + sCurrentDir;
         }
-
-        traverse();
-        cout << CLEAR_SCREEN << flush;
-        cout << CURSOR_TOP << flush;
-        cbound = display();
-        cout << CURSOR_TOP << flush;
-        cpos = CURSOR_START_POS;
+        run();
     }
+    return;
+}
+
+
+void FileSystem::evaluateArrowKeys(string sBuff)
+{
+    int cpos = fetch_cursor_position();
+    int cbound = mDirEntries.size();
+
+    if (sBuff == KEY_UP)
+    {
+        if (cpos > 1)
+        {
+            cout << CURSOR_UP << flush;
+            cpos--;
+        }
+    }
+    else if (sBuff == KEY_DOWN)
+    {
+        if (cpos < cbound)
+        {
+            cout << CURSOR_DOWN << flush;
+            cpos++;
+        }
+    }
+    else if (sBuff == KEY_LEFT)
+    {
+        // goto to previously visited directory - backward
+        if (mBackDirStack.size() > 0)
+        {
+            string nextDir = mBackDirStack.back();
+            mBackDirStack.pop_back();
+            mFwdDirStack.push_back(mPath);
+            mPath = nextDir;
+            run();
+        }
+    }
+    else if (sBuff == KEY_RIGHT)
+    {
+        // goto to previously visited directory - forward
+        if (mFwdDirStack.size() > 0)
+        {
+            string nextDir = mFwdDirStack.back();
+            mFwdDirStack.pop_back();
+            mBackDirStack.push_back(mPath);
+            mPath = nextDir;
+            run();
+        }
+    }
+    else
+    {
+        // Do Nothing for other entries.
+    }
+    return;
+}
+
+
+// Goto to Home directory of the file explorer.
+void FileSystem::restart()
+{
+    mPath = mRootPath;
+    mBackDirStack.clear();
+    mFwdDirStack.clear();
+    run();
     return;
 }
 
 void FileSystem::snapshot()
 {
+}
+
+
+void FileSystem::debug()
+{
+    cout << "===================================" << endl;
+    cout << "Number Of Entries: " << mDirEntries.size() << endl;
+    cout << "mPath: " << mPath << endl;
+    cout << "mBackDirStack:" << endl;
+    cout << "==============" << endl;
+    for(string& s : mBackDirStack) cout << s << endl;
+    cout << "mFwdDirStack:" << endl;
+    cout << "=============" << endl;
+    for(string& s : mFwdDirStack) cout << s << endl;
+    cout << "===================================" << endl;
+    return;
 }
 

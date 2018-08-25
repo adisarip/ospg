@@ -14,14 +14,22 @@ class FileSystem
 
     void setPath(string dirPath);
     int traverse();
-    int display(); // return the #lines displayed
-    void evaluateAndDisplay(int& cpos, int& cbound);
+    void display();
+    void evaluateEnterKey();
+    void evaluateArrowKeys(string sBuff);
+    void restart();
     void snapshot();
+
+  private:
+    void run(); // re-traverse the new path and display
+    void debug();
 
   private:
     string mPath;
     string mRootPath;
     vector<string> mDirEntries;  // List of all the entries files/directories in the current directory
+    vector<string> mBackDirStack;    // directory stack for "<-" (Left arrow) key
+    vector<string> mFwdDirStack;     // directory stack for "->" (right arrow) key
 };
 
 #endif /* FILESYSTEM_H */
