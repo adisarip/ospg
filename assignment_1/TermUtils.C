@@ -1,5 +1,7 @@
 #include <iostream>
 #include <string>
+#include <termios.h>
+#include <unistd.h>
 #include "TermUtils.H"
 using namespace std;
 
@@ -47,22 +49,16 @@ int restore_terminal()
         cerr << "Could Not Restore the Terminal Attributes" << endl;
         rc = FAILURE;
     }
-    cout << flush << endl;
     return rc;
 }
 
 
 int fetch_cursor_position()
 {
-    struct termios save,raw;
     char buff[8];
     string s;
     int start_pos, end_pos;
     int sCursorPos;
-
-    tcgetattr(0,&save);
-    cfmakeraw(&raw);
-    tcsetattr(0,TCSANOW,&raw);
 
     if (isatty(STDIN_FILENO))
     {
@@ -75,7 +71,11 @@ int fetch_cursor_position()
         s = s.substr(start_pos, end_pos-start_pos);
         sCursorPos = atoi(s.c_str());
     }
-    tcsetattr(0,TCSANOW,&save);
+    else
+    {
+        sCursorPos = -1;
+    }
+    cin.clear();
     return sCursorPos;
 }
 

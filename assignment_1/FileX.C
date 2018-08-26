@@ -1,6 +1,6 @@
-#include <cstring>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 #include "TermUtils.H"
 #include "FileSystem.H"
 using namespace std;
@@ -54,7 +54,6 @@ int main(int argc, char* argv[])
     while(1)
     {
         cin.clear();
-        fflush(stdin);
         read (STDIN_FILENO, &c, 1);
         if (c == CTRL_C || c == QUIT)
         {
@@ -63,18 +62,21 @@ int main(int argc, char* argv[])
         }
         else if (c == KEY_ESC)
         {
+            cin.clear();
             read (STDIN_FILENO, &in_buff, 8);
-            //cout << in_buff << endl;
             fs.evaluateArrowKeys(string(in_buff));
         }
         else if (c == KEY_ENTER)
         {
-            //cout << "c: " << c << ":"<< endl;
             fs.evaluateEnterKey();
+        }
+        else if (c == BACKSPACE)
+        {
+            // Move up a directory
+            fs.moveUp();
         }
         else if (c == 'h' || c == 'H')
         {
-            //cout << c << endl;
             fs.restart();
         }
         else

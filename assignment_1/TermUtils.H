@@ -2,15 +2,13 @@
 #ifndef TERMUTILS_H
 #define TERMUTILS_H
 
-#include <termios.h>
-#include <unistd.h>
-
 #define SUCCESS 0
 #define FAILURE -1
 
 // Quit terminal
-#define CTRL_C '\x03' // Ctrl-C
-#define QUIT   '\x71' // 'q'
+#define CTRL_C    '\x03' // Ctrl-C
+#define QUIT      '\x71' // 'q'
+#define BACKSPACE '\x7F' // Backspace (DEL in ASCII chart)
 
 #define KEY_ESC   '\x1B'
 #define KEY_ENTER '\n'
@@ -36,9 +34,11 @@
 #define CLEAR_SCREEN              "\e[2J"
 #define FETCH_CURSOR_POSITION     "\e[6n"
 
+#define EXEC_PATH "/usr/bin/open"
+#define EXEC_NAME "open"
+
 int  setup_alternate_terminal();
 int  restore_terminal();
-void evaluate_arrow_keys(int& cpos, int& cbound);
 int  fetch_cursor_position(); // returns cursor line number
 
 #endif /* TERMUTILS_H */
