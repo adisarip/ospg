@@ -82,6 +82,10 @@ int main(int argc, char* argv[])
         {
             fs.restart();
         }
+        else if (c == ':')
+        {
+            fs.processCommandMode();
+        }
         else
         {
             // Do nothing

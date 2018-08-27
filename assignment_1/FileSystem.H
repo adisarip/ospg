@@ -13,12 +13,13 @@ class FileSystem
     ~FileSystem();
 
     void run(); // traverse the path, clear screen and display
-    int traverse();
+    int  traverse();
     void display();
     void evaluateEnterKey();
     void evaluateArrowKeys(string sBuff);
     void moveUp();
     void restart();
+    void processCommandMode();
     void snapshot();
 
     // Inline setter/getter functions
@@ -37,10 +38,11 @@ class FileSystem
     void changeDir(string nextDir);
     void openFile(string fileName);
     void footer();
-    int constructFileData();
+    int  constructFileData();
     void clearAndDisplay();
     void normalDisplay();
     void extendedDisplay();
+    void showCmd(string inputCmd);
 
   private:
     string mPath;

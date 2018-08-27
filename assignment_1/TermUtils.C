@@ -107,3 +107,20 @@ void fetch_terminal_size(int& height, int& width)
     return;
 }
 
+
+void setup_command_mode()
+{
+    new_term_settings.c_lflag |= ECHO;
+    new_term_settings.c_lflag |= ICANON;
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_term_settings);
+}
+
+
+void unset_command_mode()
+{
+    new_term_settings.c_lflag &= ~ECHO;
+    new_term_settings.c_lflag &= ~ICANON;
+    tcsetattr(STDIN_FILENO, TCSANOW, &new_term_settings);
+}
+
+

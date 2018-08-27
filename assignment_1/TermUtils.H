@@ -43,6 +43,8 @@ int  setup_alternate_terminal();
 int  restore_terminal();
 int  fetch_cursor_position(); // returns cursor line number
 void fetch_terminal_size(int& height, int& width);   // returns height and width in number of characters.
+void setup_command_mode();
+void unset_command_mode();
 
 #endif /* TERMUTILS_H */
 

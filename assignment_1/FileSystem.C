@@ -16,6 +16,11 @@ using namespace std;
 FileSystem::FileSystem(string dirPath)
 :mPath(dirPath)
 ,mRootPath(dirPath)
+,mTermHeight(0)
+,mTermWidth(0)
+,mDispStartIndex(0)
+,mDispEndIndex(0)
+,mDisplayAreaSize(0)
 ,mFooterSize(4)
 {
     mDirEntries.clear();
@@ -331,6 +336,31 @@ void FileSystem::restart()
     run();
     return;
 }
+
+
+void FileSystem::processCommandMode()
+{
+    string inputCmd;
+
+    clearAndDisplay();
+    // move the cursor to bottom
+    cout << "\e[" << mTermHeight << ";1H" << flush;
+    cout << ":" << flush;
+
+    setup_command_mode();
+    getline(cin, inputCmd);
+    unset_command_mode();
+    clearAndDisplay();
+    showCmd(inputCmd);
+}
+
+
+void FileSystem::showCmd(string inputCmd)
+{
+    cout << "\e[" << mTermHeight << ";1H" << flush;
+    cout << "executing command --> " << inputCmd << flush;
+}
+
 
 void FileSystem::snapshot()
 {
