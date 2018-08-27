@@ -25,14 +25,16 @@
 #define CLEAR_ALT_SCREEN_BUFFER   "\e[?2J"     // clear the alternate screen buffer
 #define ENABLE_ALT_SCREEN_SCROLL  "\e[?1007h"  // enable cursor up/down in alternate screen buffer
 #define DISABLE_ALT_SCREEN_SCROLL "\e[?1007l"  // disable cursor up/down in alternate screen buffer
-#define CURSOR_TOP                "\e[1;1H"
-#define CURSOR_UP                 "\e[1A"
-#define CURSOR_DOWN               "\e[1B"
-#define CURSOR_RIGHT              "\e[1C"
-#define CURSOR_LEFT               "\e[1D"
-#define CURSOR_BOTTOM             "\e[1010h"
+#define MOVE_CURSOR_TOP           "\e[1;1H"
+#define MOVE_CURSOR_UP            "\e[1A"
+#define MOVE_CURSOR_UP_5          "\e[5A"
+#define MOVE_CURSOR_DOWN          "\e[1B"
+#define MOVE_CURSOR_RIGHT         "\e[1C"
+#define MOVE_CURSOR_LEFT          "\e[1D"
+#define MOVE_CURSOR_BOTTOM        "\e[1010h"
 #define CLEAR_SCREEN              "\e[2J"
 #define FETCH_CURSOR_POSITION     "\e[6n"
+#define FETCH_TERMINAL_SIZE       "\e[18t" // size is returned in the format "\e[8;H;Wt"
 
 #define EXEC_PATH "/usr/bin/open"
 #define EXEC_NAME "open"
@@ -40,6 +42,7 @@
 int  setup_alternate_terminal();
 int  restore_terminal();
 int  fetch_cursor_position(); // returns cursor line number
+void fetch_terminal_size(int& height, int& width);   // returns height and width in number of characters.
 
 #endif /* TERMUTILS_H */
 

@@ -44,10 +44,13 @@ int main(int argc, char* argv[])
     // Switch to alternate screen buffer
     setup_alternate_terminal();
 
-    // Display initial directory listing
-    fs.traverse();
-    fs.display();
-    cout << CURSOR_TOP << flush;
+    // Save the terminal dimensions
+    int height, width;
+    fetch_terminal_size(height, width);
+    fs.setTermDimensions(height, width);
+
+    // Display directory listing
+    fs.run();
 
     // Read each character in non-cannonical mode
     // Infinite loop - press 'q' or Ctrl-C to break.

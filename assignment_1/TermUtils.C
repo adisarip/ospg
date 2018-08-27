@@ -79,3 +79,31 @@ int fetch_cursor_position()
     return sCursorPos;
 }
 
+void fetch_terminal_size(int& height, int& width)
+{
+    char buff[16];
+    string s;
+    int pos, start_pos, end_pos;
+
+    if (isatty(STDIN_FILENO))
+    {
+        write (STDOUT_FILENO, FETCH_TERMINAL_SIZE, 5);
+        read (STDIN_FILENO ,buff ,sizeof(buff));
+
+        s = string(buff);
+        start_pos = s.find("[8;")+3;
+        end_pos = s.find_last_of("t");
+        s = s.substr(start_pos, end_pos-start_pos);
+
+        pos = s.find(";");
+        height = atoi(s.substr(0,pos).c_str());
+        width = atoi(s.substr(pos+1).c_str());
+    }
+    else
+    {
+        height = 0; width = 0;
+    }
+    cin.clear();
+    return;
+}
+

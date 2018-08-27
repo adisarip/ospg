@@ -16,6 +16,7 @@ using namespace std;
 FileSystem::FileSystem(string dirPath)
 :mPath(dirPath)
 ,mRootPath(dirPath)
+,mFooterSize(4)
 {
     mDirEntries.clear();
     mDirEntryDetails.clear();
@@ -26,12 +27,6 @@ FileSystem::FileSystem(string dirPath)
 FileSystem::~FileSystem()
 {
     // Good Bye !!
-}
-
-void FileSystem::setPath(string dirPath)
-{
-    mPath = dirPath;
-    return;
 }
 
 
@@ -138,47 +133,95 @@ int FileSystem::constructFileData()
 
 void FileSystem::display()
 {
-    // display the contents of the directory
-    for (unsigned int index = 0; index < mDirEntries.size(); index++)
+    // check number of entries for display
+    int sNumEntries = mDirEntries.size();
+    if(sNumEntries <= mDisplayAreaSize)
     {
-        cout << setw(25) << left << mDirEntries[index] << mDirEntryDetails[index] << endl;
+        normalDisplay();
+    }
+    else
+    {
+        extendedDisplay();
     }
     footer();
     return;
 }
 
 
+void FileSystem::normalDisplay()
+{
+    int sNumEntries = mDirEntries.size();
+    // display the contents of the directory
+    for (int index = 0; index < sNumEntries; index++)
+    {
+        cout << setw(25) << left << mDirEntries[index] << mDirEntryDetails[index] << endl;
+    }
+}
+
+
+void FileSystem::extendedDisplay()
+{
+    // display the contents of the directory - handling overflow
+    for (int index = mDispStartIndex; index <= mDispEndIndex; index++)
+    {
+        cout << setw(25) << left << mDirEntries[index] << mDirEntryDetails[index] << endl;
+    }
+}
+
+
 void FileSystem::run()
 {
-    // re-traverse and display the contents
+    // re-traverse, clear screen and display the contents
     traverse();
+    clearAndDisplay();
+    return;
+}
+
+
+void FileSystem::clearAndDisplay()
+{
     cout << CLEAR_SCREEN << flush;
-    cout << CURSOR_TOP << flush;
+    cout << MOVE_CURSOR_TOP << flush;
     display();
-    cout << CURSOR_TOP << flush;
+    cout << MOVE_CURSOR_TOP << flush;
     return;
 }
 
 
 void FileSystem::evaluateArrowKeys(string sBuff)
 {
-    int cpos = fetch_cursor_position();
-    int cbound = mDirEntries.size();
+    int sCursorIndex = fetch_cursor_position();
+    int sNumEntries = mDirEntries.size();
 
     if (sBuff == KEY_UP)
     {
-        if (cpos > 1)
+        if (sCursorIndex == CURSOR_START_POS && mDispStartIndex > 0)
         {
-            cout << CURSOR_UP << flush;
-            cpos--;
+            mDispStartIndex--;
+            mDispEndIndex--;
+            clearAndDisplay();
+        }
+        if (sCursorIndex > CURSOR_START_POS)
+        {
+            cout << MOVE_CURSOR_UP << flush;
+            sCursorIndex--;
         }
     }
     else if (sBuff == KEY_DOWN)
     {
-        if (cpos < cbound)
+        if (sCursorIndex == mDisplayAreaSize && mDispEndIndex < sNumEntries)
         {
-            cout << CURSOR_DOWN << flush;
-            cpos++;
+            mDispStartIndex++;
+            mDispEndIndex++;
+            cout << CLEAR_SCREEN << flush;
+            cout << MOVE_CURSOR_TOP << flush;
+            display();
+            cout << MOVE_CURSOR_UP_5 << flush;
+        }
+        if (sCursorIndex < min(mDisplayAreaSize, sNumEntries))
+        {
+            cout << MOVE_CURSOR_DOWN << flush;
+            sCursorIndex++;
         }
     }
     else if (sBuff == KEY_LEFT)
@@ -225,7 +268,7 @@ void FileSystem::evaluateEnterKey()
     else
     {
         // Open the file
-        openFile(sCurrentEntry);
+        openFile(mPath + sCurrentEntry);
     }
     return;
 }
