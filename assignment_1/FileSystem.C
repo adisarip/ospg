@@ -11,6 +11,7 @@
 #include <pwd.h>
 #include "FileSystem.H"
 #include "TermUtils.H"
+#include "FileUtils.H"
 using namespace std;
 
 FileSystem::FileSystem(string dirPath)
@@ -342,6 +343,7 @@ void FileSystem::restart()
 void FileSystem::processCommandMode()
 {
     string inputCmd;
+    FileUtils fu;
 
     clearAndDisplay();
     // move the cursor to bottom
@@ -351,15 +353,19 @@ void FileSystem::processCommandMode()
     setup_command_mode();
     getline(cin, inputCmd);
     unset_command_mode();
-    clearAndDisplay();
-    showCmd(inputCmd);
+    fu.init(inputCmd, mPath);
+    int rc = fu.execute();
+    run();
+    showCmd(inputCmd, rc);
 }
 
 
-void FileSystem::showCmd(string inputCmd)
+void FileSystem::showCmd(string inputCmd, int rc)
 {
     cout << "\e[" << mTermHeight << ";1H" << flush;
-    cout << "executing command --> " << inputCmd << flush;
+    cout << "executing --> " << inputCmd << flush;
+    cout << ((rc == 0) ? " --> DONE!" : " --> FAILED!") << flush;
+    cout << MOVE_CURSOR_TOP << flush;
 }
 
 

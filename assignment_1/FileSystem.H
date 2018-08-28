@@ -47,7 +47,7 @@ class FileSystem
     void clearAndDisplay();
     void normalDisplay();
     void extendedDisplay();
-    void showCmd(string inputCmd);
+    void showCmd(string inputCmd, int rc);
 
     // inline private helper functions
     inline int min(int x, int y)
