@@ -65,8 +65,8 @@ int FileSystem::traverse()
             }
         }
     }
-
     sRC = constructFileData();
+    setDisplayDimensions();
 
     return sRC;
 }
@@ -264,7 +264,8 @@ void FileSystem::evaluateArrowKeys(string sBuff)
 void FileSystem::evaluateEnterKey()
 {
     int cpos = fetch_cursor_position();
-    string sCurrentEntry = mDirEntries[cpos-1];
+    int sCursorIndex = cpos + mDispStartIndex;
+    string sCurrentEntry = mDirEntries[sCursorIndex-1];
 
     if (sCurrentEntry.back() == '/')
     {

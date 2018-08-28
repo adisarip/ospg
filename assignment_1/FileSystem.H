@@ -27,14 +27,19 @@ class FileSystem
     {
         mTermHeight = h;
         mTermWidth = w;
-        mDisplayAreaSize  = (h - mFooterSize - 1);
+    };
+    inline void setDisplayDimensions()
+    {
+        mDisplayAreaSize  = (mTermHeight - mFooterSize - 1);
         mDispStartIndex = 0;
         mDispEndIndex = mDisplayAreaSize-1;
     };
-    inline void setPath(string dirPath) {mPath = dirPath;};
+    inline void setPath(string dirPath)
+    {
+        mPath = dirPath;
+    };
 
   private:
-    inline int min(int x, int y) {return ((x<y) ? x : y);};
     void changeDir(string nextDir);
     void openFile(string fileName);
     void footer();
@@ -43,6 +48,12 @@ class FileSystem
     void normalDisplay();
     void extendedDisplay();
     void showCmd(string inputCmd);
+
+    // inline private helper functions
+    inline int min(int x, int y)
+    {
+        return ((x<y) ? x : y);
+    };
 
   private:
     string mPath;

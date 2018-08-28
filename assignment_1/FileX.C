@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
     int height, width;
     fetch_terminal_size(height, width);
     fs.setTermDimensions(height, width);
+    fs.setDisplayDimensions();
 
     // Display directory listing
     fs.run();
