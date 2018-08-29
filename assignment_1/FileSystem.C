@@ -353,10 +353,18 @@ void FileSystem::processCommandMode()
     setup_command_mode();
     getline(cin, inputCmd);
     unset_command_mode();
-    fu.init(inputCmd, mPath);
-    int rc = fu.execute();
-    run();
-    showCmd(inputCmd, rc);
+
+    if (inputCmd == "")
+    {
+        run();
+    }
+    else
+    {
+        fu.init(inputCmd, mPath);
+        int rc = fu.execute();
+        run();
+        showCmd(inputCmd, rc);
+    }
 }
 
 

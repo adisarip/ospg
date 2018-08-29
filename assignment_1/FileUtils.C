@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include "FileUtils.H"
 #include "TermUtils.H"
 using namespace std;
@@ -49,8 +52,12 @@ void FileUtils::tokenize(string cmdString)
     {
         mArgs.push_back(s);
     }
-    mCmd = mArgs[0];
-    mArgs.erase(mArgs.begin());
+
+    if (mArgs.size() > 0)
+    {
+        mCmd = mArgs[0];
+        mArgs.erase(mArgs.begin());
+    }
 }
 
 
@@ -118,20 +125,136 @@ int FileUtils::fxRename()
 
 int FileUtils::fxCreateFile()
 {
-    return SUCCESS;
+    int rc = SUCCESS;
+    string sFilePath;
+
+    if (mArgs.size() < 2)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        string sLastArg = mArgs.back();
+        mArgs.pop_back();
+        if (sLastArg[0] == '~')
+        {
+            string sHomeDir = getUserHome();
+            sLastArg = sHomeDir + sLastArg.substr(1);
+        }
+        if (sLastArg[0] == '.')
+        {
+            sLastArg = mFxPath + sLastArg.substr(1);
+        }
+        if (sLastArg.back() != '/')
+        {
+            sLastArg += "/";
+        }
+
+        // The last argument should be a directory
+        if (!isDirectory(sLastArg))
+        {
+            rc = FAILURE;
+        }
+        else
+        {
+            for (string& sFile : mArgs)
+            {
+                sFilePath = sLastArg + sFile;
+                int fd = open(sFilePath.c_str(),
+                              O_RDWR | O_CREAT,
+                              S_IRWXU | S_IRGRP | S_IROTH);
+                if (fd < 0)
+                {
+                    rc = FAILURE;
+                }
+                else
+                {
+                    close(fd);
+                }
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+bool FileUtils::isDirectory(string path)
+{
+    struct stat fileStat;
+    stat(path.c_str(), &fileStat);
+    return (S_ISDIR(fileStat.st_mode));
+}
+
+
+string FileUtils::getUserHome()
+{
+    // get the user home directory
+    char* pHomeDir = getenv("HOME");
+    string sHomeDir;
+    if (pHomeDir != NULL)
+    {
+        sHomeDir = string(pHomeDir) + "/";
+    }
+    else
+    {
+        sHomeDir = "";
+    }
+    return sHomeDir;
 }
 
 
 int FileUtils::fxCreateDir()
 {
-    return SUCCESS;
+    int rc = SUCCESS;
+    string sDirPath;
+
+    if (mArgs.size() < 2)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        string sLastArg = mArgs.back();
+        mArgs.pop_back();
+        if (sLastArg[0] == '~')
+        {
+            string sHomeDir = getUserHome();
+            sLastArg = sHomeDir + sLastArg.substr(1);
+        }
+        if (sLastArg[0] == '.')
+        {
+            sLastArg = mFxPath + sLastArg.substr(1);
+        }
+        if (sLastArg.back() != '/')
+        {
+            sLastArg += "/";
+        }
+
+        // The last argument should be a directory
+        if (!isDirectory(sLastArg))
+        {
+            rc = FAILURE;
+        }
+        else
+        {
+            for (string& sDir : mArgs)
+            {
+                sDirPath = sLastArg + sDir;
+                rc = mkdir(sDirPath.c_str(),
+                           S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+            }
+        }
+    }
+
+    return rc;
 }
 
 
 int FileUtils::fxDeleteFile()
 {
     int rc = SUCCESS;
-    string sFile;
+    string sFilePath;
 
     if (mArgs.size() < 1)
     {
@@ -141,7 +264,8 @@ int FileUtils::fxDeleteFile()
     {
         for (string& sFile : mArgs)
         {
-            rc = remove(sFile.c_str());
+            sFilePath = mFxPath + sFile;
+            rc = remove(sFilePath.c_str());
             if (rc < 0) break;
         }
     }
@@ -216,7 +340,6 @@ int FileUtils::fxGoto()
 int FileUtils::fxSearch()
 {
     int rc = SUCCESS;
-    //string sDirPath;
 
     if (mArgs.size() < 1)
     {
@@ -226,7 +349,6 @@ int FileUtils::fxSearch()
     {
         for (string& sEntry : mArgs)
         {
-            //sDirPath = mFxPath + sEntry;
             rc = searchFolderTree(sEntry);
         }
     }
@@ -240,7 +362,7 @@ int FileUtils::searchFolderTree(string sEntry, string dirPath)
 {
     DIR* pDir;
     struct dirent* pEntry;
-    //vector<string> sFoundList;
+    string sPath;
 
     if (dirPath == "")
     {
@@ -264,13 +386,12 @@ int FileUtils::searchFolderTree(string sEntry, string dirPath)
             }
             if (pEntry->d_type == DT_DIR)
             {
-                dirPath = dirPath + sName + "/";
-                searchFolderTree(sEntry, dirPath);
+                sPath = dirPath + sName + "/";
+                searchFolderTree(sEntry, sPath);
             }
         }
     }
     closedir(pDir);
-    //rmdir(dirPath.c_str());
 
     return 0;
 }

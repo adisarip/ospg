@@ -34,10 +34,6 @@ class FileUtils
     // Public methods
     void init(string cmdString, string mFxPath);
     int execute();
-    inline bool isSearchCmd()
-    {
-        return ((mCmd == "search") ? true : false);
-    };
 
     int fxCopy();
     int fxMove();
@@ -56,6 +52,8 @@ class FileUtils
     int deleteFolderTree(string dirPath);
     int searchFolderTree(string sEntry, string dirPath = "");
     void displaySearchResults();
+    bool isDirectory(string path);
+    string getUserHome();
 
   private:
     string mCmd;
