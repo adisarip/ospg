@@ -3,6 +3,7 @@
 #define FILEUTILS_H
 #include <string>
 #include <vector>
+#include "FileSystem.H"
 using namespace std;
 
 #define SUCCESS 0
@@ -28,7 +29,7 @@ class FileUtils
     };
 
     // Constructor/Destructor
-    FileUtils();
+    FileUtils(FileSystem* p);
     ~FileUtils();
 
     // Public methods
@@ -45,7 +46,6 @@ class FileUtils
     int fxGoto();
     int fxSearch();
     int fxSnapshot();
-    void fxDump();
 
   private:
     void tokenize(string cmdString);
@@ -56,6 +56,7 @@ class FileUtils
     string getUserHome();
 
   private:
+    FileSystem* pFx;
     string mCmd;
     string mFxPath;
     vector<string> mArgs;

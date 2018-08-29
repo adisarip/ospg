@@ -281,30 +281,54 @@ void FileSystem::evaluateEnterKey()
 }
 
 
-void FileSystem::changeDir(string nextDir)
+void FileSystem::changeDir(string nextDir, bool isAppend)
 {
     // change the directory to nextDir.
-    if (nextDir == "./")
+    if (nextDir.find("./") == 0)
     {
-        // skip - no need to append current directory
-        return;
+        if (nextDir == "./")
+        {
+            // skip - no need to append current directory
+            return;
+        }
+        else
+        {
+            // save the current directory in backward dir stack
+            mBackDirStack.push_back(mPath);
+            mPath = mPath + nextDir.substr(2);
+        }
     }
-    else if (nextDir == "../")
+    else if (nextDir.find("../") == 0)
     {
         // save the current directory in backward dir stack
         mBackDirStack.push_back(mPath);
 
-        // Slice the last directory
-        int pos = mPath.find_last_of("/");
-        mPath = mPath.substr(0, pos);
-        pos = mPath.find_last_of("/");
-        mPath = mPath.substr(0, pos+1);
+        int pos;
+        while (nextDir.find("../") == 0 && mPath.size() >= 1)
+        {
+            if (mPath.back() == '/')
+            {
+                pos = mPath.find_last_of("/");
+                mPath = mPath.substr(0, pos);
+            }
+            pos = mPath.find_last_of("/");
+            mPath = mPath.substr(0, pos+1);
+            nextDir = nextDir.substr(3);
+        }
+        mPath = mPath + nextDir;
     }
     else
     {
         // save the current directory in backward dir stack
         mBackDirStack.push_back(mPath);
-        mPath = mPath + nextDir;
+        if (isAppend)
+        {
+            mPath = mPath + nextDir;
+        }
+        else
+        {
+            mPath = nextDir;
+        }
     }
     run();
     return;
@@ -343,7 +367,7 @@ void FileSystem::restart()
 void FileSystem::processCommandMode()
 {
     string inputCmd;
-    FileUtils fu;
+    FileUtils fu(this);
 
     clearAndDisplay();
     // move the cursor to bottom

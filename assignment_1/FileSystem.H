@@ -38,9 +38,15 @@ class FileSystem
     {
         mPath = dirPath;
     };
+    inline string getRootPath()
+    {
+        return mRootPath;
+    };
+
+    // other public utilities
+    void changeDir(string nextDir, bool isAppend = true);
 
   private:
-    void changeDir(string nextDir);
     void openFile(string fileName);
     void footer();
     int  constructFileData();
