@@ -135,66 +135,13 @@ int FileUtils::fxCreateFile()
     }
     else
     {
-        /*** Validating / Evaluating the last argument - START ***/
         string arg = mArgs.back();
         mArgs.pop_back();
 
-        if (arg == "." || arg == "..")
-        {
-            arg = arg + "/";   // for consistency
-        }
+        // Evaluating / Validating the destination argument
+        rc = validateDestination(arg, sFilePath);
 
-        if (arg == "/" && arg.find("/") == 0)
-        {
-            // goto file explorer root / or absolute path
-            sFilePath = (arg.size() > 1) ? (arg) : (pFx->getRootPath());
-        }
-        else if (arg == "~" || arg.find("~/") == 0)
-        {
-            // path w.r.t user home directory
-            int pos = (arg.size() > 1) ? 2 : 1;
-            string sHomeDir = getUserHome();
-            sFilePath = sHomeDir + arg.substr(pos);
-        }
-        else if (arg.find("./") == 0)
-        {
-            sFilePath = arg;
-        }
-        else if (arg.find("../") == 0)
-        {
-            int pos;
-            sFilePath = mFxPath;
-            while (arg.find("../") == 0 && sFilePath.size() >= 1)
-            {
-                if (sFilePath.back() == '/')
-                {
-                    pos = sFilePath.find_last_of("/");
-                    sFilePath = sFilePath.substr(0, pos);
-                }
-                pos = sFilePath.find_last_of("/");
-                sFilePath = sFilePath.substr(0, pos+1);
-                arg = arg.substr(3);
-            }
-            sFilePath = sFilePath + arg;
-        }
-        else
-        {
-            // relative path w/o starting with "./"
-            sFilePath = mFxPath + arg;
-        }
-
-        if (sFilePath.back() != '/')
-        {
-            sFilePath = sFilePath + "/";
-        }
-        /*** Validating / Evaluating the last argument - END ***/
-
-        // Finally the destination should be a valid existing directory
-        if (!isDirectory(sFilePath))
-        {
-            rc = FAILURE;
-        }
-        else
+        if (rc == SUCCESS)
         {
             for (string& sFile : mArgs)
             {
@@ -229,66 +176,13 @@ int FileUtils::fxCreateDir()
     }
     else
     {
-        /*** Evaluating the last argument - START ***/
         string arg = mArgs.back();
         mArgs.pop_back();
 
-        if (arg == "." || arg == "..")
-        {
-            arg = arg + "/";   // added for consistency
-        }
+        // Evaluating / Validating the destination argument
+        rc = validateDestination(arg, sDirPath);
 
-        if (arg == "/" && arg.find("/") == 0)
-        {
-            // file explorer root / or absolute path
-            sDirPath = (arg.size() > 1) ? (arg) : (pFx->getRootPath());
-        }
-        else if (arg == "~" || arg.find("~/") == 0)
-        {
-            // path w.r.t user home directory
-            int pos = (arg.size() > 1) ? 2 : 1;
-            string sHomeDir = getUserHome();
-            sDirPath = sHomeDir + arg.substr(pos);
-        }
-        else if (arg.find("./") == 0)
-        {
-            sDirPath = arg;
-        }
-        else if (arg.find("../") == 0)
-        {
-            int pos;
-            sDirPath = mFxPath;
-            while (arg.find("../") == 0 && sDirPath.size() >= 1)
-            {
-                if (sDirPath.back() == '/')
-                {
-                    pos = sDirPath.find_last_of("/");
-                    sDirPath = sDirPath.substr(0, pos);
-                }
-                pos = sDirPath.find_last_of("/");
-                sDirPath = sDirPath.substr(0, pos+1);
-                arg = arg.substr(3);
-            }
-            sDirPath = sDirPath + arg;
-        }
-        else
-        {
-            // relative path w/o starting with "./"
-            sDirPath = mFxPath + arg;
-        }
-
-        if (sDirPath.back() != '/')
-        {
-            sDirPath = sDirPath + "/";
-        }
-        /*** Evaluating the last argument - END ***/
-
-        // Finally the destination should be a valid existing directory
-        if (!isDirectory(sDirPath))
-        {
-            rc = FAILURE;
-        }
-        else
+        if (rc == SUCCESS)
         {
             for (string& sDir : mArgs)
             {
@@ -297,6 +191,32 @@ int FileUtils::fxCreateDir()
                            S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
             }
         }
+    }
+
+    return rc;
+}
+
+
+int FileUtils::fxGoto()
+{
+    int rc = SUCCESS;
+    string sDirPath;
+    bool isAppend = false;
+
+    if (mArgs.size() != 1)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        string arg = mArgs[0];
+        // Evaluating / Validating the destination argument
+        rc = validateDestination(arg, sDirPath);
+    }
+
+    if (rc == SUCCESS)
+    {
+        pFx->changeDir(sDirPath, isAppend);
     }
 
     return rc;
@@ -342,66 +262,6 @@ int FileUtils::fxDeleteDir()
             sDirPath = mFxPath + sEntry;
             rc = deleteFolderTree(sDirPath);
         }
-    }
-
-    return rc;
-}
-
-
-int FileUtils::fxGoto()
-{
-    int rc = SUCCESS;
-    string sDirPath;
-    bool isAppend = false;
-
-    if (mArgs.size() != 1)
-    {
-        rc = FAILURE;
-    }
-    else
-    {
-        string arg = mArgs[0];
-
-        if (arg == "." || arg == "..")
-        {
-            arg = arg + "/";   // for consistency
-        }
-
-        if (arg == "/" && arg.find("/") == 0)
-        {
-            // goto file explorer root / or absolute path
-            sDirPath = (arg.size() > 1) ? (arg) : (pFx->getRootPath());
-        }
-        else if (arg == "~" || arg.find("~/") == 0)
-        {
-            // path w.r.t user home directory
-            int pos = (arg.size() > 1) ? 2 : 1;
-            string sHomeDir = getUserHome();
-            sDirPath = sHomeDir + arg.substr(pos);
-        }
-        else if (arg.find("./") == 0 || arg.find("../") == 0)
-        {
-            sDirPath = arg;
-        }
-        else
-        {
-            // relative path w/o starting wit "./"
-            sDirPath = mFxPath + arg;
-        }
-
-        if (sDirPath.back() != '/')
-        {
-            sDirPath = sDirPath + "/";
-        }
-    }
-
-    if (!isDirectory(sDirPath))
-    {
-        rc = FAILURE;
-    }
-    else
-    {
-        pFx->changeDir(sDirPath, isAppend);
     }
 
     return rc;
@@ -472,6 +332,75 @@ string FileUtils::getUserHome()
         sHomeDir = "";
     }
     return sHomeDir;
+}
+
+
+int FileUtils::validateDestination(string arg, string& sPath)
+{
+    int rc = SUCCESS;
+
+    if (arg == "." || arg == "..")
+    {
+        arg = arg + "/";   // for consistency
+    }
+
+    if (arg == "/" && arg.find("/") == 0)
+    {
+        // goto file explorer root / or absolute path
+        sPath = (arg.size() > 1) ? (arg) : (pFx->getRootPath());
+    }
+    else if (arg == "~" || arg.find("~/") == 0)
+    {
+        // path w.r.t user home directory
+        int pos = (arg.size() > 1) ? 2 : 1;
+        string sHomeDir = getUserHome();
+        sPath = sHomeDir + arg.substr(pos);
+    }
+    else if (arg.find("./") == 0)
+    {
+        sPath = arg;
+    }
+    else if (arg.find("../") == 0)
+    {
+        if (mCmd == "goto")
+        {
+            sPath = arg;
+        }
+        else
+        {
+            int pos;
+            sPath = mFxPath;
+            while (arg.find("../") == 0 && sPath.size() >= 1)
+            {
+                if (sPath.back() == '/')
+                {
+                    pos = sPath.find_last_of("/");
+                    sPath = sPath.substr(0, pos);
+                }
+                pos = sPath.find_last_of("/");
+                sPath = sPath.substr(0, pos+1);
+                arg = arg.substr(3);
+            }
+            sPath = sPath + arg;
+        }
+    }
+    else
+    {
+        // relative path w/o starting with "./"
+        sPath = mFxPath + arg;
+    }
+
+    if (sPath.back() != '/')
+    {
+        sPath = sPath + "/";
+    }
+
+    // Finally the destination should be a valid existing directory
+    if (!isDirectory(sPath))
+    {
+        rc = FAILURE;
+    }
+    return rc;
 }
 
 

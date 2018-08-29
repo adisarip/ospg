@@ -54,6 +54,7 @@ class FileUtils
     void displaySearchResults();
     bool isDirectory(string path);
     string getUserHome();
+    int validateDestination(string arg, string& sPath);
 
   private:
     FileSystem* pFx;
