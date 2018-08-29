@@ -20,7 +20,6 @@ class FileSystem
     void moveUp();
     void restart();
     void processCommandMode();
-    void snapshot();
 
     // Inline setter/getter functions
     inline void setTermDimensions(int h, int w)

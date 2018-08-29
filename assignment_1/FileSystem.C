@@ -401,11 +401,6 @@ void FileSystem::showCmd(string inputCmd, int rc)
 }
 
 
-void FileSystem::snapshot()
-{
-}
-
-
 void FileSystem::footer()
 {
     cout << "====================" << endl;
