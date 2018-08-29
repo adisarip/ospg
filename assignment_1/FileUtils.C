@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <stdio.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -94,7 +95,36 @@ int FileUtils::execute()
 
 int FileUtils::fxCopy()
 {
-    return SUCCESS;
+    int rc = SUCCESS;
+    string sDirPath;
+
+    if (mArgs.size() < 2)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        string arg = mArgs.back();
+        mArgs.pop_back();
+
+        // Evaluating / Validating the destination argument
+        rc = validateDestination(arg, sDirPath);
+
+        if (rc == SUCCESS)
+        {
+            for (string& sFile : mArgs)
+            {
+                string sourceFile = sFile;
+                string destFile = sDirPath + sFile;
+
+                ifstream input(sourceFile.c_str(), ios_base::binary | ios_base::in);
+                ofstream output(destFile.c_str(), ios_base::binary | ios_base::out);
+                input >> output.rdbuf();
+            }
+        }
+    }
+
+    return rc;
 }
 
 
