@@ -17,7 +17,7 @@ OBJECTS := $(FILES:$(SRCDIR)/%.C=$(OBJDIR)/%.o)
 $(BINDIR)/$(TARGET): $(OBJECTS)
 	@$(CC) $(OBJECTS) -o $@
 	@echo "Linking Complete."
-	@echo "To start the file explorer run --> ./bin/"$(TARGET)
+	@echo "To start the file explorer run --> "$(BINDIR)"/"$(TARGET)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.C
 	@$(CC) $(CCFLAGS) -c $< -o $@
@@ -25,5 +25,5 @@ $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.C
 
 clean:
 	@echo "Cleaning ./obj and ./bin directories."
-	@rm -f core $(OBJECTS) $(TARGET)
+	@rm -f core $(OBJECTS) $(BINDIR)/$(TARGET)
 
