@@ -23,9 +23,10 @@ class FileUtils
         CREATE_DIR = 4,
         DELETE_FILE = 5,
         DELETE_DIR = 6,
-        GOTO = 7,
-        SEARCH = 8,
-        SNAPSHOT = 9,
+        DELETE = 7,
+        GOTO = 8,
+        SEARCH = 9,
+        SNAPSHOT = 10,
     };
 
     // Constructor/Destructor
@@ -43,18 +44,23 @@ class FileUtils
     int fxCreateDir();
     int fxDeleteFile();
     int fxDeleteDir();
+    int fxDelete();
     int fxGoto();
     int fxSearch();
     int fxSnapshot();
 
   private:
     void tokenize(string cmdString);
+    int copyDirectory(string sourceDirPath, string destDirPath);
     int deleteFolderTree(string dirPath);
     int searchFolderTree(string sEntry, string dirPath = "");
     void displaySearchResults();
     bool isDirectory(string path);
     string getUserHome();
-    int validateDestination(string arg, string& sPath);
+    int evaluateDirectoryArg(string arg, string& sPath);
+    int scanAndDumpResults(ofstream& dump, string dirPath, int formatDepth);
+    void evaluateArrowKeysInSearchResults(string buff);
+    void evaluateEnterKeyInSearchResults();
 
   private:
     FileSystem* pFx;

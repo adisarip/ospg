@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <stdio.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -24,6 +25,7 @@ FileUtils::FileUtils(FileSystem* p)
     mCmdsList.push_back("create_dir");
     mCmdsList.push_back("delete_file");
     mCmdsList.push_back("delete_dir");
+    mCmdsList.push_back("delete");
     mCmdsList.push_back("goto");
     mCmdsList.push_back("search");
     mCmdsList.push_back("snapshot");
@@ -84,6 +86,7 @@ int FileUtils::execute()
         case FileUtils::CREATE_DIR:  rc = fxCreateDir();  break;
         case FileUtils::DELETE_FILE: rc = fxDeleteFile(); break;
         case FileUtils::DELETE_DIR:  rc = fxDeleteDir();  break;
+        case FileUtils::DELETE:      rc = fxDelete();     break;
         case FileUtils::GOTO:        rc = fxGoto();       break;
         case FileUtils::SEARCH:      rc = fxSearch();     break;
         case FileUtils::SNAPSHOT:    rc = fxSnapshot();   break;
@@ -96,7 +99,7 @@ int FileUtils::execute()
 int FileUtils::fxCopy()
 {
     int rc = SUCCESS;
-    string sDirPath;
+    string sDestPath;
 
     if (mArgs.size() < 2)
     {
@@ -104,22 +107,29 @@ int FileUtils::fxCopy()
     }
     else
     {
-        string arg = mArgs.back();
+        string darg = mArgs.back();
         mArgs.pop_back();
 
         // Evaluating / Validating the destination argument
-        rc = validateDestination(arg, sDirPath);
+        rc = evaluateDirectoryArg(darg, sDestPath);
 
         if (rc == SUCCESS)
         {
-            for (string& sFile : mArgs)
+            for (string& arg : mArgs)
             {
-                string sourceFile = sFile;
-                string destFile = sDirPath + sFile;
-
-                ifstream input(sourceFile.c_str(), ios_base::binary | ios_base::in);
-                ofstream output(destFile.c_str(), ios_base::binary | ios_base::out);
-                input >> output.rdbuf();
+                string sPath;
+                if (evaluateDirectoryArg(arg, sPath) == SUCCESS)
+                {
+                    rc = copyDirectory(sPath, sDestPath);
+                }
+                else
+                {
+                    string srcFile = arg;
+                    string destFile = sDestPath + arg;
+                    ifstream input(srcFile.c_str(), ios_base::binary | ios_base::in);
+                    ofstream output(destFile.c_str(), ios_base::binary | ios_base::out);
+                    input >> output.rdbuf();
+                }
             }
         }
     }
@@ -130,7 +140,16 @@ int FileUtils::fxCopy()
 
 int FileUtils::fxMove()
 {
-    return SUCCESS;
+    int rc = SUCCESS;
+
+    rc = fxCopy();
+
+    if (rc == SUCCESS)
+    {
+        rc = fxDelete();
+    }
+
+    return rc;
 }
 
 
@@ -169,14 +188,14 @@ int FileUtils::fxCreateFile()
         mArgs.pop_back();
 
         // Evaluating / Validating the destination argument
-        rc = validateDestination(arg, sFilePath);
-
+        rc = evaluateDirectoryArg(arg, sFilePath);
         if (rc == SUCCESS)
         {
+            string sPath;
             for (string& sFile : mArgs)
             {
-                sFilePath = sFilePath + sFile;
-                int fd = open(sFilePath.c_str(),
+                sPath = sFilePath + sFile;
+                int fd = open(sPath.c_str(),
                               O_RDWR | O_CREAT,
                               S_IRWXU | S_IRGRP | S_IROTH);
                 if (fd < 0)
@@ -210,14 +229,15 @@ int FileUtils::fxCreateDir()
         mArgs.pop_back();
 
         // Evaluating / Validating the destination argument
-        rc = validateDestination(arg, sDirPath);
+        rc = evaluateDirectoryArg(arg, sDirPath);
 
         if (rc == SUCCESS)
         {
+            string sPath;
             for (string& sDir : mArgs)
             {
-                sDirPath = sDirPath + sDir;
-                rc = mkdir(sDirPath.c_str(),
+                sPath = sDirPath + sDir;
+                rc = mkdir(sPath.c_str(),
                            S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
             }
         }
@@ -241,12 +261,43 @@ int FileUtils::fxGoto()
     {
         string arg = mArgs[0];
         // Evaluating / Validating the destination argument
-        rc = validateDestination(arg, sDirPath);
+        rc = evaluateDirectoryArg(arg, sDirPath);
     }
 
     if (rc == SUCCESS)
     {
         pFx->changeDir(sDirPath, isAppend);
+    }
+
+    return rc;
+}
+
+
+int FileUtils::fxDelete()
+{
+    int rc = SUCCESS;
+
+    if (mArgs.size() < 1)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        for (string& arg : mArgs)
+        {
+            string sDirPath;
+            string sFilePath;
+            if (evaluateDirectoryArg(arg, sDirPath) == SUCCESS)
+            {
+                rc = deleteFolderTree(sDirPath);
+            }
+            else
+            {
+                sFilePath = mFxPath + arg;
+                rc = remove(sFilePath.c_str());
+                if (rc < 0) break;
+            }
+        }
     }
 
     return rc;
@@ -279,7 +330,6 @@ int FileUtils::fxDeleteFile()
 int FileUtils::fxDeleteDir()
 {
     int rc = SUCCESS;
-    string sDirPath;
 
     if (mArgs.size() < 1)
     {
@@ -287,10 +337,14 @@ int FileUtils::fxDeleteDir()
     }
     else
     {
-        for (string& sEntry : mArgs)
+        for (string& arg : mArgs)
         {
-            sDirPath = mFxPath + sEntry;
-            rc = deleteFolderTree(sDirPath);
+            string sDirPath;
+            rc = evaluateDirectoryArg(arg, sDirPath);
+            if (rc == SUCCESS)
+            {
+                rc = deleteFolderTree(sDirPath);
+            }
         }
     }
 
@@ -321,7 +375,31 @@ int FileUtils::fxSearch()
 
 int FileUtils::fxSnapshot()
 {
-    return SUCCESS;
+    int rc = SUCCESS;
+    string sDirPath;
+    ofstream dump;
+
+    if (mArgs.size() != 2)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        string arg = mArgs[0]; // Cmd:(0)snapshot Args:(0)DirectoryName (1)DumpFile
+        ofstream dump(mArgs[1]);
+
+        // Evaluating / Validating the directory argument
+        rc = evaluateDirectoryArg(arg, sDirPath);
+
+        if (rc == SUCCESS)
+        {
+            dump << "[" << sDirPath << "]" << endl;
+            rc = scanAndDumpResults(dump, sDirPath, 0);
+        }
+        dump.close();
+    }
+
+    return rc;
 }
 
 
@@ -344,6 +422,7 @@ bool FileUtils::isDirectory(string path)
     }
 
     stat(path.c_str(), &fileStat);
+    cout << S_ISDIR(fileStat.st_mode) << "::" << path << endl;
     return (S_ISDIR(fileStat.st_mode));
 }
 
@@ -365,7 +444,7 @@ string FileUtils::getUserHome()
 }
 
 
-int FileUtils::validateDestination(string arg, string& sPath)
+int FileUtils::evaluateDirectoryArg(string arg, string& sPath)
 {
     int rc = SUCCESS;
 
@@ -388,7 +467,8 @@ int FileUtils::validateDestination(string arg, string& sPath)
     }
     else if (arg.find("./") == 0)
     {
-        sPath = arg;
+        //sPath = arg;
+        sPath = mFxPath + arg.substr(2);
     }
     else if (arg.find("../") == 0)
     {
@@ -434,6 +514,98 @@ int FileUtils::validateDestination(string arg, string& sPath)
 }
 
 
+int FileUtils::scanAndDumpResults(ofstream& dump, string dirPath, int formatDepth)
+{
+    int rc = SUCCESS;
+    DIR *pDir;
+    struct dirent *entry;
+    struct stat fileStat;
+
+    if((pDir = opendir(dirPath.c_str())) == NULL)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        while((entry = readdir(pDir)) != NULL)
+        {
+            string sEntryName(entry->d_name);
+            if(entry->d_type == DT_DIR)
+            {
+                // skip "." and ".." directories
+                if (sEntryName != "." && sEntryName != "..")
+                {
+                    dump << setw(formatDepth) << "" << "[" << sEntryName << "]" << endl;
+                    string sDir = dirPath + sEntryName + "/";
+                    rc = scanAndDumpResults(dump, sDir, formatDepth+4);
+                }
+            }
+            else
+            {
+                dump << setw(formatDepth) << "" << sEntryName << endl;
+            }
+        }
+        closedir(pDir);
+    }
+    return rc;
+}
+
+
+int FileUtils::copyDirectory(string sourceDirPath, string destDirPath)
+{
+    int rc = SUCCESS;
+    DIR *pDir;
+    struct dirent *entry;
+    struct stat fileStat;
+    string sDestPath;
+    string sourceDirName;
+
+    // create and empty sourceDir first in the destination path
+    if (sourceDirPath.back() == '/')
+    {
+        sourceDirName = sourceDirPath.substr(0, sourceDirPath.find_last_of("/"));
+    }
+    sourceDirName = sourceDirName.substr(sourceDirName.find_last_of("/")+1);
+    sDestPath = destDirPath + sourceDirName + "/";
+
+    rc = mkdir(sDestPath.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+
+    if (rc == SUCCESS)
+    {
+        if((pDir = opendir(sourceDirPath.c_str())) == NULL)
+        {
+            rc = FAILURE;
+        }
+        else
+        {
+            while((entry = readdir(pDir)) != NULL)
+            {
+                string sEntryName(entry->d_name);
+                if(entry->d_type == DT_DIR)
+                {
+                    // skip "." and ".." directories
+                    if (sEntryName != "." && sEntryName != "..")
+                    {
+                        string srcPath = sourceDirPath + sEntryName + "/";
+                        rc = copyDirectory(srcPath, sDestPath);
+                    }
+                }
+                else
+                {
+                    string srcFile = sEntryName;
+                    string destFile = sDestPath + sEntryName;
+                    ifstream input(srcFile.c_str(), ios_base::binary | ios_base::in);
+                    ofstream output(destFile.c_str(), ios_base::binary | ios_base::out);
+                    input >> output.rdbuf();
+                }
+            }
+            closedir(pDir);
+        }
+    }
+    return rc;
+}
+
+
 int FileUtils::searchFolderTree(string sEntry, string dirPath)
 {
     DIR* pDir;
@@ -458,7 +630,14 @@ int FileUtils::searchFolderTree(string sEntry, string dirPath)
         {
             if (sName == sEntry)
             {
-                mFoundList.push_back(dirPath + sName);
+                if (pEntry->d_type == DT_DIR)
+                {
+                    mFoundList.push_back(dirPath + sName + "/");
+                }
+                else
+                {
+                    mFoundList.push_back(dirPath + sName);
+                }
             }
             if (pEntry->d_type == DT_DIR)
             {
@@ -490,13 +669,14 @@ int FileUtils::deleteFolderTree(string dirPath)
         string sName(pEntry->d_name);
         if (sName != "." && sName != "..")
         {
-            sPath = dirPath + "/" + sName;
             if (pEntry->d_type == DT_DIR)
             {
+                sPath = dirPath + sName + "/";
                 deleteFolderTree(sPath);
             }
             else
             {
+                sPath = dirPath + sName;
                 unlink(sPath.c_str());
             }
         }
@@ -524,12 +704,89 @@ void FileUtils::displaySearchResults()
     }
     cout << MOVE_CURSOR_TOP << flush;
 
+    char c;
+    char in_buff[8];
     while(1)
     {
         cin.clear();
-        char c;
         read (STDIN_FILENO, &c, 1);
-        if (c == BACKSPACE) break;
+        if (c == BACKSPACE)
+        {
+            break;
+        }
+        else if (c == KEY_ESC)
+        {
+            cin.clear();
+            read (STDIN_FILENO, &in_buff, 8);
+            evaluateArrowKeysInSearchResults(string(in_buff));
+        }
+        else if (c == KEY_ENTER)
+        {
+            evaluateEnterKeyInSearchResults();
+            break;
+        }
+        else
+        {
+            // invalid input - try again
+        }
     }
 }
+
+
+void FileUtils::evaluateArrowKeysInSearchResults(string buff)
+{
+    int sCursorPos = fetch_cursor_position();
+    int sNumEntries = mFoundList.size() + 2;  // additional 2 for search results header
+
+    if (buff == KEY_UP)
+    {
+        if (sCursorPos > CURSOR_START_POS)
+        {
+            cout << MOVE_CURSOR_UP << flush;
+            sCursorPos--;
+        }
+    }
+    else if (buff == KEY_DOWN)
+    {
+        if (sCursorPos < sNumEntries)
+        {
+            cout << MOVE_CURSOR_DOWN << flush;
+            sCursorPos++;
+        }
+    }
+    else
+    {
+        // KEY_RIGHT & KEY_LEFT are disabled in search results screen
+    }
+    return;
+}
+
+
+void FileUtils::evaluateEnterKeyInSearchResults()
+{
+    int sCursorPos = fetch_cursor_position();
+    int sIndex = sCursorPos - 3;
+
+    if (sIndex < 0)
+    {
+        return;
+    }
+
+    if (sIndex < mFoundList.size())
+    {
+        string sCurrentEntry = mFoundList[sIndex];
+        if (sCurrentEntry.back() == '/')
+        {
+            pFx->changeDir(sCurrentEntry, false, false);
+        }
+        else
+        {
+            // Open the directory containing the file
+            int pos = sCurrentEntry.find_last_of("/");
+            sCurrentEntry = sCurrentEntry.substr(0, pos+1);
+            pFx->changeDir(sCurrentEntry, false, false);
+        }
+    }
+}
+
 

@@ -116,7 +116,7 @@ void setup_command_mode()
 }
 
 
-void unset_command_mode()
+void setup_normal_mode()
 {
     new_term_settings.c_lflag &= ~ECHO;
     new_term_settings.c_lflag &= ~ICANON;

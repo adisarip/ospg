@@ -43,7 +43,9 @@ class FileSystem
     };
 
     // other public utilities
-    void changeDir(string nextDir, bool isAppend = true);
+    void changeDir(string nextDir,
+                   bool isAppend = true,
+                   bool isRun = true);
 
   private:
     void openFile(string fileName);

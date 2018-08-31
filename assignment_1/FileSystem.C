@@ -79,6 +79,7 @@ int FileSystem::constructFileData()
     string sDirEntry;
     string sMonthEntries[12] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
     struct stat fileStat;
+    mDirEntryDetails.clear();
     // Now get details of each entry
     for (string& entry : mDirEntries)
     {
@@ -178,6 +179,7 @@ void FileSystem::extendedDisplay()
 void FileSystem::run()
 {
     // re-traverse, clear screen and display the contents
+    chdir(mPath.c_str());
     traverse();
     clearAndDisplay();
     return;
@@ -281,7 +283,7 @@ void FileSystem::evaluateEnterKey()
 }
 
 
-void FileSystem::changeDir(string nextDir, bool isAppend)
+void FileSystem::changeDir(string nextDir, bool isAppend, bool isRun)
 {
     // change the directory to nextDir.
     if (nextDir.find("./") == 0)
@@ -330,7 +332,12 @@ void FileSystem::changeDir(string nextDir, bool isAppend)
             mPath = nextDir;
         }
     }
-    run();
+
+    if (isRun)
+    {
+        run();
+    }
+
     return;
 }
 
@@ -376,7 +383,7 @@ void FileSystem::processCommandMode()
 
     setup_command_mode();
     getline(cin, inputCmd);
-    unset_command_mode();
+    setup_normal_mode();
 
     if (inputCmd == "")
     {
