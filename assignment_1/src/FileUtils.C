@@ -519,7 +519,6 @@ int FileUtils::scanAndDumpResults(ofstream& dump, string dirPath, int formatDept
     int rc = SUCCESS;
     DIR *pDir;
     struct dirent *entry;
-    struct stat fileStat;
 
     if((pDir = opendir(dirPath.c_str())) == NULL)
     {
@@ -556,7 +555,6 @@ int FileUtils::copyDirectory(string sourceDirPath, string destDirPath)
     int rc = SUCCESS;
     DIR *pDir;
     struct dirent *entry;
-    struct stat fileStat;
     string sDestPath;
     string sourceDirName;
 
@@ -765,7 +763,7 @@ void FileUtils::evaluateArrowKeysInSearchResults(string buff)
 void FileUtils::evaluateEnterKeyInSearchResults()
 {
     int sCursorPos = fetch_cursor_position();
-    int sIndex = sCursorPos - 3;
+    unsigned int sIndex = sCursorPos - 3;
 
     if (sIndex < 0)
     {

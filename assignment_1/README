@@ -1,0 +1,30 @@
+*********************************************************************************************
+*                             AN xterm based Linux File Explorer                            *
+*********************************************************************************************
+
+Project Source Tree:
+  |__README (your a looking at this right now!!)
+  |__ src
+  |__ obj
+  |__ bin
+  |__ Makefile
+
+make clean: Clean all the object files and binaries from ./obj and ./bin directories
+make      : Builds the target "fx" --> 'f'ILE E'x'PLORER
+
+A typical use case: make clean; make ; ./bin/fx
+
+
+===============================
+FEATURE SET SUPPORTED BY - "fx"
+===============================
+
+
+(A) NORMAL MODE:
+----------------
+
+
+
+
+(B) COMMAND MODE:
+-----------------
