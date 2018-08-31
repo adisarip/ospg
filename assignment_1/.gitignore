@@ -6,4 +6,8 @@ fx
 .TermUtils.H.swp
 .FileUtils.C.swp
 .FileUtils.H.swp
+FileSystem.o
+FileX.o
+TermUtils.o
+FileUtils.o
 create_dirs.sh
