@@ -143,12 +143,12 @@ int FileUtils::fxCopy()
 int FileUtils::fxMove()
 {
     int rc = SUCCESS;
-    bool isForce = true;
 
     rc = fxCopy();
 
     if (rc == SUCCESS)
     {
+        bool isForce = true;
         rc = fxDelete(isForce);
     }
 
@@ -402,10 +402,11 @@ int FileUtils::fxClearTrash()
     else
     {
         // form the clear trash command
+        bool isForce = true;
         mArgs.clear();
         string sTrashPath = pFx->getTrashPath();
         mArgs.push_back(sTrashPath);
-        rc = fxDeleteDir();
+        rc = fxDelete(isForce);
         pFx->createTrashDirectory();
     }
 
