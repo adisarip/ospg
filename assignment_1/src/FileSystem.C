@@ -421,7 +421,12 @@ void FileSystem::showCmd(string inputCmd, int rc)
 {
     cout << "\e[" << mTermHeight << ";1H" << flush;
     cout << "executing --> " << inputCmd << flush;
-    cout << ((rc == 0) ? " --> DONE!" : " --> FAILED!") << flush;
+    cout << ((rc == SUCCESS) ? " --> DONE!" : " --> FAILED!") << flush;
+    if (rc == INVALID_COMMAND)
+    {
+        cout << " --> INVALID COMMAND = "
+             << inputCmd.substr(0, inputCmd.find(" ")) << flush;
+    }
     cout << MOVE_CURSOR_TOP << flush;
 }
 

@@ -80,19 +80,19 @@ int FileUtils::execute()
     }
     switch(cmdIndex)
     {
-        case FileUtils::COPY:        rc = fxCopy();       break;
-        case FileUtils::MOVE:        rc = fxMove();       break;
-        case FileUtils::RENAME:      rc = fxRename();     break;
-        case FileUtils::CREATE_FILE: rc = fxCreateFile(); break;
-        case FileUtils::CREATE_DIR:  rc = fxCreateDir();  break;
-        case FileUtils::DELETE_FILE: rc = fxDeleteFile(); break;
-        case FileUtils::DELETE_DIR:  rc = fxDeleteDir();  break;
-        case FileUtils::DELETE:      rc = fxDelete();     break;
-        case FileUtils::GOTO:        rc = fxGoto();       break;
-        case FileUtils::SEARCH:      rc = fxSearch();     break;
-        case FileUtils::SNAPSHOT:    rc = fxSnapshot();   break;
-        case FileUtils::CLEAR_TRASH: rc = fxClearTrash(); break;
-        default: break;
+        case FileUtils::COPY:        rc = fxCopy();        break;
+        case FileUtils::MOVE:        rc = fxMove();        break;
+        case FileUtils::RENAME:      rc = fxRename();      break;
+        case FileUtils::CREATE_FILE: rc = fxCreateFile();  break;
+        case FileUtils::CREATE_DIR:  rc = fxCreateDir();   break;
+        case FileUtils::DELETE_FILE: rc = fxDeleteFile();  break;
+        case FileUtils::DELETE_DIR:  rc = fxDeleteDir();   break;
+        case FileUtils::DELETE:      rc = fxDelete();      break;
+        case FileUtils::GOTO:        rc = fxGoto();        break;
+        case FileUtils::SEARCH:      rc = fxSearch();      break;
+        case FileUtils::SNAPSHOT:    rc = fxSnapshot();    break;
+        case FileUtils::CLEAR_TRASH: rc = fxClearTrash();  break;
+        default:                     rc = INVALID_COMMAND; break;
     }
     return rc;
 }
@@ -102,6 +102,7 @@ int FileUtils::fxCopy()
 {
     int rc = SUCCESS;
     string sDestPath;
+    struct stat sBuffer;
 
     if (mArgs.size() < 2)
     {
@@ -120,17 +121,20 @@ int FileUtils::fxCopy()
             for (string& arg : mArgs)
             {
                 string sPath;
-                if (evaluateDirectoryArg(arg, sPath) == SUCCESS)
+                if (stat (arg.c_str(), &sBuffer) == 0) // if file or directory exists
                 {
-                    rc = copyDirectory(sPath, sDestPath);
-                }
-                else
-                {
-                    string srcFile = arg;
-                    string destFile = sDestPath + arg;
-                    ifstream input(srcFile.c_str(), ios_base::binary | ios_base::in);
-                    ofstream output(destFile.c_str(), ios_base::binary | ios_base::out);
-                    input >> output.rdbuf();
+                    if (evaluateDirectoryArg(arg, sPath) == SUCCESS)
+                    {
+                        rc = copyDirectory(sPath, sDestPath);
+                    }
+                    else
+                    {
+                        string srcFile = arg;
+                        string destFile = sDestPath + arg;
+                        ifstream input(srcFile.c_str(), ios_base::binary | ios_base::in);
+                        ofstream output(destFile.c_str(), ios_base::binary | ios_base::out);
+                        input >> output.rdbuf();
+                    }
                 }
             }
         }

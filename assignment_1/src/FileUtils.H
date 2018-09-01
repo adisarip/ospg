@@ -6,10 +6,6 @@
 #include "FileSystem.H"
 using namespace std;
 
-#define SUCCESS 0
-#define FAILURE -1
-
-
 class FileUtils
 {
   public:

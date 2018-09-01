@@ -4,6 +4,7 @@
 
 #define SUCCESS 0
 #define FAILURE -1
+#define INVALID_COMMAND -2
 
 // Quit terminal
 #define CTRL_C    '\x03' // Ctrl-C
