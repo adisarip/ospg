@@ -27,6 +27,7 @@ class FileUtils
         GOTO = 8,
         SEARCH = 9,
         SNAPSHOT = 10,
+        CLEAR_TRASH = 11,
     };
 
     // Constructor/Destructor
@@ -44,10 +45,11 @@ class FileUtils
     int fxCreateDir();
     int fxDeleteFile();
     int fxDeleteDir();
-    int fxDelete();
+    int fxDelete(bool isForce=false);
     int fxGoto();
     int fxSearch();
     int fxSnapshot();
+    int fxClearTrash();
 
   private:
     void tokenize(string cmdString);

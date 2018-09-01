@@ -29,6 +29,7 @@ FileUtils::FileUtils(FileSystem* p)
     mCmdsList.push_back("goto");
     mCmdsList.push_back("search");
     mCmdsList.push_back("snapshot");
+    mCmdsList.push_back("clear_trash");
     mFoundList.clear();
 }
 
@@ -90,6 +91,7 @@ int FileUtils::execute()
         case FileUtils::GOTO:        rc = fxGoto();       break;
         case FileUtils::SEARCH:      rc = fxSearch();     break;
         case FileUtils::SNAPSHOT:    rc = fxSnapshot();   break;
+        case FileUtils::CLEAR_TRASH: rc = fxClearTrash(); break;
         default: break;
     }
     return rc;
@@ -141,12 +143,13 @@ int FileUtils::fxCopy()
 int FileUtils::fxMove()
 {
     int rc = SUCCESS;
+    bool isForce = true;
 
     rc = fxCopy();
 
     if (rc == SUCCESS)
     {
-        rc = fxDelete();
+        rc = fxDelete(isForce);
     }
 
     return rc;
@@ -273,7 +276,7 @@ int FileUtils::fxGoto()
 }
 
 
-int FileUtils::fxDelete()
+int FileUtils::fxDelete(bool isForce)
 {
     int rc = SUCCESS;
 
@@ -283,20 +286,32 @@ int FileUtils::fxDelete()
     }
     else
     {
-        for (string& arg : mArgs)
+        // If current directory is the trash folder,
+        // then delete the contents permanently.
+        string sTrashPath = pFx->getTrashPath();
+        if (mFxPath == sTrashPath || isForce)
         {
-            string sDirPath;
-            string sFilePath;
-            if (evaluateDirectoryArg(arg, sDirPath) == SUCCESS)
+            for (string& arg : mArgs)
             {
-                rc = deleteFolderTree(sDirPath);
+                string sDirPath;
+                string sFilePath;
+                if (evaluateDirectoryArg(arg, sDirPath) == SUCCESS)
+                {
+                    rc = deleteFolderTree(sDirPath);
+                }
+                else
+                {
+                    sFilePath = mFxPath + arg;
+                    rc = remove(sFilePath.c_str());
+                    if (rc < 0) break;
+                }
             }
-            else
-            {
-                sFilePath = mFxPath + arg;
-                rc = remove(sFilePath.c_str());
-                if (rc < 0) break;
-            }
+        }
+        else
+        {
+            // move the contents to trash folder =>  ~/.fxtrash/
+            mArgs.push_back(sTrashPath);
+            rc = fxMove();
         }
     }
 
@@ -315,11 +330,23 @@ int FileUtils::fxDeleteFile()
     }
     else
     {
-        for (string& sFile : mArgs)
+        // If current directory is the trash folder,
+        // then delete the files permanently.
+        string sTrashPath = pFx->getTrashPath();
+        if (mFxPath == sTrashPath)
         {
-            sFilePath = mFxPath + sFile;
-            rc = remove(sFilePath.c_str());
-            if (rc < 0) break;
+            for (string& sFile : mArgs)
+            {
+                sFilePath = mFxPath + sFile;
+                rc = remove(sFilePath.c_str());
+                if (rc < 0) break;
+            }
+        }
+        else
+        {
+            // move the contents to trash folder =>  ~/.fxtrash/
+            mArgs.push_back(sTrashPath);
+            fxMove();
         }
     }
 
@@ -337,15 +364,49 @@ int FileUtils::fxDeleteDir()
     }
     else
     {
-        for (string& arg : mArgs)
+        // If current directory is the trash folder,
+        // then delete the directories permanently.
+        string sTrashPath = pFx->getTrashPath();
+        if (mFxPath == sTrashPath)
         {
-            string sDirPath;
-            rc = evaluateDirectoryArg(arg, sDirPath);
-            if (rc == SUCCESS)
+            for (string& arg : mArgs)
             {
-                rc = deleteFolderTree(sDirPath);
+                string sDirPath;
+                rc = evaluateDirectoryArg(arg, sDirPath);
+                if (rc == SUCCESS)
+                {
+                    rc = deleteFolderTree(sDirPath);
+                }
             }
         }
+        else
+        {
+            // move the contents to trash folder =>  ~/.fxtrash/
+            mArgs.push_back(sTrashPath);
+            fxMove();
+        }
+    }
+
+    return rc;
+}
+
+
+int FileUtils::fxClearTrash()
+{
+    int rc = SUCCESS;
+
+    if (mArgs.size() > 0)
+    {
+        rc = FAILURE;
+    }
+    else
+    {
+        // form the clear trash command
+        mArgs.clear();
+        string sTrashPath = pFx->getTrashPath();
+        mArgs.push_back(sTrashPath);
+        rc = fxDeleteDir();
+        pFx->createTrashDirectory();
     }
 
     return rc;
@@ -422,7 +483,6 @@ bool FileUtils::isDirectory(string path)
     }
 
     stat(path.c_str(), &fileStat);
-    cout << S_ISDIR(fileStat.st_mode) << "::" << path << endl;
     return (S_ISDIR(fileStat.st_mode));
 }
 
@@ -453,7 +513,7 @@ int FileUtils::evaluateDirectoryArg(string arg, string& sPath)
         arg = arg + "/";   // for consistency
     }
 
-    if (arg == "/" && arg.find("/") == 0)
+    if (arg == "/" || arg.find("/") == 0)
     {
         // goto file explorer root / or absolute path
         sPath = (arg.size() > 1) ? (arg) : (pFx->getRootPath());

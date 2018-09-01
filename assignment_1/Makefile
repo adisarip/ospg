@@ -7,23 +7,26 @@
 TARGET  = fx
 CC      = g++-8
 CCFLAGS = -Wall -std=c++1z
-SRCDIR  = src
-OBJDIR  = obj
-BINDIR  = bin
+SRCDIR  = ./src
+OBJDIR  = ./obj
+BINDIR  = ./bin
 
 FILES   := $(wildcard $(SRCDIR)/*.C)
 OBJECTS := $(FILES:$(SRCDIR)/%.C=$(OBJDIR)/%.o)
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
-	@$(CC) $(OBJECTS) -o $@
+	$(CC) $(OBJECTS) -o $@
 	@echo "Linking Complete."
 	@echo "To start the file explorer run --> "$(BINDIR)"/"$(TARGET)
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.C
-	@$(CC) $(CCFLAGS) -c $< -o $@
+	$(CC) $(CCFLAGS) -c $< -o $@
 	@echo "Compiled "$<" successfully."
 
 clean:
-	@echo "Cleaning ./obj and ./bin directories."
-	@rm -f core $(OBJECTS) $(BINDIR)/$(TARGET)
+	@echo "Cleaning the object files."
+	rm -f core $(OBJECTS)
 
+clean_all:
+	@echo "Cleaning all the object files and binaries."
+	rm -f core $(OBJECTS) $(BINDIR)/$(TARGET)

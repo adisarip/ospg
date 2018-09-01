@@ -28,11 +28,29 @@ FileSystem::FileSystem(string dirPath)
     mDirEntryDetails.clear();
     mBackDirStack.clear();
     mFwdDirStack.clear();
+    createTrashDirectory();
 }
 
 FileSystem::~FileSystem()
 {
     // Good Bye !!
+}
+
+
+void FileSystem::createTrashDirectory()
+{
+    // Create a trash folder at home directory - $HOME/.fxtrash/
+    char* pHomeDir = getenv("HOME");
+    if (pHomeDir != NULL)
+    {
+        mFxTrashPath = string(pHomeDir) + "/.fxtrash/";
+    }
+    else
+    {
+        mFxTrashPath = mRootPath + ".fxtrash/";
+    }
+
+    mkdir(mFxTrashPath.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 }
 
 

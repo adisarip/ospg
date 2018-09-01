@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <sys/stat.h>
 #include "TermUtils.H"
 #include "FileSystem.H"
 using namespace std;

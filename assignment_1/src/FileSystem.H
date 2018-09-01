@@ -41,11 +41,17 @@ class FileSystem
     {
         return mRootPath;
     };
+    inline string getTrashPath()
+    {
+        return mFxTrashPath;
+    };
 
     // other public utilities
     void changeDir(string nextDir,
                    bool isAppend = true,
                    bool isRun = true);
+
+    void createTrashDirectory();
 
   private:
     void openFile(string fileName);
@@ -75,6 +81,7 @@ class FileSystem
     vector<string> mDirEntryDetails;
     vector<string> mBackDirStack;    // directory stack for "<-" (Left arrow) key
     vector<string> mFwdDirStack;     // directory stack for "->" (right arrow) key
+    string mFxTrashPath;
 };
 
 #endif /* FILESYSTEM_H */
