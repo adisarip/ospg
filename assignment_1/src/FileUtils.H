@@ -59,6 +59,7 @@ class FileUtils
     int scanAndDumpResults(ofstream& dump, string dirPath, int formatDepth);
     void evaluateArrowKeysInSearchResults(string buff);
     void evaluateEnterKeyInSearchResults();
+    string getTimeStamp();
 
   private:
     FileSystem* pFx;

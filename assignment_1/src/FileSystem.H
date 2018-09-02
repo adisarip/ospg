@@ -67,8 +67,13 @@ class FileSystem
     {
         return ((x<y) ? x : y);
     };
+    inline int max(int x, int y)
+    {
+        return ((x>y) ? x : y);
+    };
 
   private:
+    int mMaxDispStrSize;
     string mPath;
     string mRootPath;
     int mTermHeight;

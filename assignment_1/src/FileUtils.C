@@ -121,16 +121,20 @@ int FileUtils::fxCopy()
             for (string& arg : mArgs)
             {
                 string sPath;
-                if (stat (arg.c_str(), &sBuffer) == 0) // if file or directory exists
+                if (stat(arg.c_str(), &sBuffer) == 0) // if file or directory exists
                 {
-                    if (evaluateDirectoryArg(arg, sPath) == SUCCESS)
+                    rc = evaluateDirectoryArg(arg, sPath);
+                    if (rc == SUCCESS)
                     {
+                        // if the argument is a directory
                         rc = copyDirectory(sPath, sDestPath);
                     }
                     else
                     {
-                        string srcFile = arg;
-                        string destFile = sDestPath + arg;
+                        // if the argument is a file
+                        string srcFileName = sPath.substr(sPath.find_last_of("/")+1);
+                        string srcFile = sPath;
+                        string destFile = sDestPath + srcFileName;
                         ifstream input(srcFile.c_str(), ios_base::binary | ios_base::in);
                         ofstream output(destFile.c_str(), ios_base::binary | ios_base::out);
                         input >> output.rdbuf();
@@ -147,13 +151,62 @@ int FileUtils::fxCopy()
 int FileUtils::fxMove()
 {
     int rc = SUCCESS;
+    string sDestPath;
+    struct stat sBuffer;
 
-    rc = fxCopy();
-
-    if (rc == SUCCESS)
+    if (mArgs.size() < 2)
     {
-        bool isForce = true;
-        rc = fxDelete(isForce);
+        rc = FAILURE;
+    }
+    else
+    {
+        // get the destination directory argument
+        string darg = mArgs.back();
+        mArgs.pop_back();
+        vector<string> sArgs = mArgs;
+        for (string& sEntry : sArgs)
+        {
+            // extract the file/folder name of the entry to be moved
+            if (sEntry.back() == '/') sEntry.pop_back();
+            string name = sEntry.substr(sEntry.find_last_of("/")+1);
+
+            // Evaluating / Validating the destination argument
+            rc = evaluateDirectoryArg(darg, sDestPath);
+            if (rc == SUCCESS)
+            {
+                // if the destination is trash folder & the entry already exists
+                // in it then add a time stamp and move the entry
+                string entryPath = sDestPath + name;
+                int entryStatus = stat(entryPath.c_str(), &sBuffer);
+                if (sDestPath == pFx->getTrashPath() && entryStatus == 0)
+                {
+                    name = name + "_" +getTimeStamp();
+                }
+                sDestPath = sDestPath + name;
+
+                mArgs.clear();
+                string sEntryPath;
+                if (evaluateDirectoryArg(sEntry, sEntryPath) == SUCCESS)
+                {
+                    // If the entry is a directory
+                    if (mCmd == "move" || mCmd == "delete" || mCmd == "delete_dir")
+                    {
+                        mArgs.push_back(sEntry);
+                    }
+                }
+                else
+                {
+                    // If the entry is a file
+                    if (mCmd == "move" || mCmd == "delete" || mCmd == "delete_file")
+                    {
+                        mArgs.push_back(sEntry);
+                    }
+                }
+                mArgs.push_back(sDestPath);
+
+                rc = fxRename();
+            }
+        }
     }
 
     return rc;
@@ -171,8 +224,22 @@ int FileUtils::fxRename()
     }
     else
     {
-        sFile = mFxPath + mArgs[0];
-        dFile = mFxPath + mArgs[1];
+        sFile = mArgs[0];
+        dFile = mArgs[1];
+
+        if (mCmd == "rename")
+        {
+            // extract the source directory path
+            if (sFile.back() == '/') sFile.pop_back();
+            string sourceDirPath = sFile.substr(0, sFile.find_last_of("/")+1);
+
+            // extract the new name of file/directory
+            if (dFile.back() == '/') dFile.pop_back();
+            string newName = dFile.substr(dFile.find_last_of("/")+1);
+
+            dFile = sourceDirPath + newName;
+        }
+
         rc = rename(sFile.c_str(), dFile.c_str());
     }
 
@@ -185,34 +252,38 @@ int FileUtils::fxCreateFile()
     int rc = SUCCESS;
     string sFilePath;
 
-    if (mArgs.size() < 2)
+    if (mArgs.size() < 1)
     {
         rc = FAILURE;
     }
     else
     {
         string arg = mArgs.back();
-        mArgs.pop_back();
 
         // Evaluating / Validating the destination argument
-        rc = evaluateDirectoryArg(arg, sFilePath);
-        if (rc == SUCCESS)
+        if (evaluateDirectoryArg(arg, sFilePath) == SUCCESS)
         {
-            string sPath;
-            for (string& sFile : mArgs)
+            mArgs.pop_back();
+        }
+        else
+        {
+            sFilePath = mFxPath;
+        }
+
+        string sPath;
+        for (string& sFile : mArgs)
+        {
+            sPath = sFilePath + sFile;
+            int fd = open(sPath.c_str(),
+                          O_RDWR | O_CREAT,
+                          S_IRWXU | S_IRGRP | S_IROTH);
+            if (fd < 0)
             {
-                sPath = sFilePath + sFile;
-                int fd = open(sPath.c_str(),
-                              O_RDWR | O_CREAT,
-                              S_IRWXU | S_IRGRP | S_IROTH);
-                if (fd < 0)
-                {
-                    rc = FAILURE;
-                }
-                else
-                {
-                    close(fd);
-                }
+                rc = FAILURE;
+            }
+            else
+            {
+                close(fd);
             }
         }
     }
@@ -226,27 +297,30 @@ int FileUtils::fxCreateDir()
     int rc = SUCCESS;
     string sDirPath;
 
-    if (mArgs.size() < 2)
+    if (mArgs.size() < 1)
     {
         rc = FAILURE;
     }
     else
     {
         string arg = mArgs.back();
-        mArgs.pop_back();
 
         // Evaluating / Validating the destination argument
-        rc = evaluateDirectoryArg(arg, sDirPath);
-
-        if (rc == SUCCESS)
+        if (evaluateDirectoryArg(arg, sDirPath) == SUCCESS)
         {
-            string sPath;
-            for (string& sDir : mArgs)
-            {
-                sPath = sDirPath + sDir;
-                rc = mkdir(sPath.c_str(),
-                           S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-            }
+            mArgs.pop_back();
+        }
+        else
+        {
+            sDirPath = mFxPath;
+        }
+
+        string sPath;
+        for (string& sDir : mArgs)
+        {
+            sPath = sDirPath + sDir;
+            rc = mkdir(sPath.c_str(),
+                       S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         }
     }
 
@@ -313,7 +387,6 @@ int FileUtils::fxDelete(bool isForce)
         }
         else
         {
-            // move the contents to trash folder =>  ~/.fxtrash/
             mArgs.push_back(sTrashPath);
             rc = fxMove();
         }
@@ -473,9 +546,33 @@ int FileUtils::fxSnapshot()
 /*     Helper Functions     */
 /****************************/
 
+string FileUtils::getTimeStamp()
+{
+    string sTimeStamp;
+    time_t sRawTime;
+    time(&sRawTime);
+    struct tm* tm_t = localtime(&sRawTime);
+    string s_year(to_string(tm_t->tm_year+1900));
+    string s_mon(to_string(tm_t->tm_mon+1));
+    string s_day = string(to_string(tm_t->tm_mday));
+    string s_hour = string(to_string(tm_t->tm_hour));
+    string s_min = string(to_string(tm_t->tm_min));
+    string s_sec = string(to_string(tm_t->tm_sec));
+    s_day = (s_day.size() == 1) ? (string("0") + s_day) : s_day;
+    s_hour = (s_hour.size() == 1) ? (string("0") + s_hour) : s_hour;
+    s_min = (s_min.size() == 1) ? (string("0") + s_min) : s_min;
+    s_sec = (s_sec.size() == 1) ? (string("0") + s_sec) : s_sec;
+    sTimeStamp = s_year + "_" + s_mon + "_" + s_day + "_" +
+                 s_hour + "_" + s_min + "_" + s_sec;
+    cout << sTimeStamp << endl;
+    return sTimeStamp;
+}
+
+
 bool FileUtils::isDirectory(string path)
 {
     struct stat fileStat;
+    bool isDir;
 
     // adjust in case of relative paths
     if (path.find("./") == 0)
@@ -488,7 +585,8 @@ bool FileUtils::isDirectory(string path)
     }
 
     stat(path.c_str(), &fileStat);
-    return (S_ISDIR(fileStat.st_mode));
+    isDir = (S_ISDIR(fileStat.st_mode) == 1) ? true : false;
+    return isDir;
 }
 
 
@@ -520,7 +618,7 @@ int FileUtils::evaluateDirectoryArg(string arg, string& sPath)
 
     if (arg == "/" || arg.find("/") == 0)
     {
-        // goto file explorer root / or absolute path
+        // file explorer root (or) absolute path
         sPath = (arg.size() > 1) ? (arg) : (pFx->getRootPath());
     }
     else if (arg == "~" || arg.find("~/") == 0)
@@ -532,7 +630,6 @@ int FileUtils::evaluateDirectoryArg(string arg, string& sPath)
     }
     else if (arg.find("./") == 0)
     {
-        //sPath = arg;
         sPath = mFxPath + arg.substr(2);
     }
     else if (arg.find("../") == 0)
@@ -543,17 +640,11 @@ int FileUtils::evaluateDirectoryArg(string arg, string& sPath)
         }
         else
         {
-            int pos;
             sPath = mFxPath;
             while (arg.find("../") == 0 && sPath.size() >= 1)
             {
-                if (sPath.back() == '/')
-                {
-                    pos = sPath.find_last_of("/");
-                    sPath = sPath.substr(0, pos);
-                }
-                pos = sPath.find_last_of("/");
-                sPath = sPath.substr(0, pos+1);
+                if (sPath.back() == '/') sPath.pop_back();
+                sPath = sPath.substr(0, sPath.find_last_of("/")+1);
                 arg = arg.substr(3);
             }
             sPath = sPath + arg;
@@ -571,9 +662,10 @@ int FileUtils::evaluateDirectoryArg(string arg, string& sPath)
     }
 
     // Finally the destination should be a valid existing directory
-    if (!isDirectory(sPath))
+    if (isDirectory(sPath) == false)
     {
         rc = FAILURE;
+        sPath.pop_back(); // remove the trailing '/' if not a directory
     }
     return rc;
 }
@@ -631,6 +723,8 @@ int FileUtils::copyDirectory(string sourceDirPath, string destDirPath)
     sourceDirName = sourceDirName.substr(sourceDirName.find_last_of("/")+1);
     sDestPath = destDirPath + sourceDirName + "/";
 
+    // if the directory already exists in the target then we will get the return code
+    // rc = -1. In that case skip copying the directory and return with failure.
     rc = mkdir(sDestPath.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 
     if (rc == SUCCESS)

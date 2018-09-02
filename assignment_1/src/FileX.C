@@ -6,6 +6,93 @@
 #include "FileSystem.H"
 using namespace std;
 
+
+int getDirectoryPath(string dirName, string& dirPath)
+{
+    int rc = SUCCESS;
+    char* pDir = getenv(dirName.c_str());
+    if (pDir != NULL)
+    {
+        dirPath = string(pDir) + "/";
+    }
+    else
+    {
+        rc = FAILURE;
+    }
+    return rc;
+}
+
+
+bool isDirectoryPresent(string dirPath)
+{
+    struct stat fileStat;
+    stat(dirPath.c_str(), &fileStat);
+    return (S_ISDIR(fileStat.st_mode));
+}
+
+
+int evaluateDirPath(string& dirPath)
+{
+    int rc = SUCCESS;
+    string sHomeDir;
+    string sCurrentDir;
+
+    rc = getDirectoryPath("HOME", sHomeDir);
+    if (rc == SUCCESS)
+    {
+        rc = getDirectoryPath("PWD", sCurrentDir);
+    }
+
+    if (rc == SUCCESS)
+    {
+        if (dirPath.back() != '/')
+        {
+            dirPath = dirPath + "/";
+        }
+
+        if (dirPath.find("/") == 0)
+        {
+            // Absolute path
+        }
+        else if (dirPath.find("./") == 0)
+        {
+            dirPath = sCurrentDir + dirPath.substr(2);
+        }
+        else if (dirPath.find("../") == 0)
+        {
+            while (dirPath.find("../") == 0 && sCurrentDir.size() >= 1)
+            {
+                if (sCurrentDir.back() == '/')
+                {
+                    sCurrentDir.pop_back();
+                }
+                int pos = sCurrentDir.find_last_of("/");
+                sCurrentDir = sCurrentDir.substr(0, pos+1);
+                dirPath = dirPath.substr(3);
+            }
+            dirPath = sCurrentDir + dirPath;
+        }
+        else if (dirPath.find("~") == 0 || dirPath.find("~/") == 0)
+        {
+            // path w.r.t user home directory
+            int pos = (dirPath.size() > 1) ? 2 : 1;
+            dirPath = sHomeDir + dirPath.substr(pos);
+        }
+        else
+        {
+            // a directory in the current folder w/o starting with "./"
+            dirPath = sCurrentDir + dirPath;
+        }
+    }
+
+    if (!isDirectoryPresent(dirPath))
+    {
+        rc = FAILURE;
+    }
+
+    return rc;
+}
+
 int main(int argc, char* argv[])
 {
     char c;
@@ -20,25 +107,17 @@ int main(int argc, char* argv[])
     else if (argc == 2)
     {
         sDirPath = string(argv[1]);
-        if (sDirPath[0] == '.')
-        {
-            cout << "Provide Absolute Path or Nothing" << endl;
-            return -1;
-        }
     }
     else
     {
-        // get the current working directory
-        char* pCwd = getenv("PWD");
-        if (pCwd != NULL)
-        {
-            sDirPath = string(pCwd) + "/";
-        }
-        else
-        {
-            sDirPath = "./";
-        }
+        sDirPath = ".";
     }
+
+    if (evaluateDirPath(sDirPath) != SUCCESS)
+    {
+        return FAILURE;
+    }
+
 
     FileSystem fs(sDirPath);
 

@@ -71,16 +71,19 @@ int FileSystem::traverse()
     {
         string sName;
         mDirEntries.clear();
+        mMaxDispStrSize = 0;
         while (NULL != (pDirEntry = readdir(pDir)))
         {
             sName = pDirEntry->d_name;
             if (pDirEntry->d_type == DT_DIR)
             {
                 mDirEntries.push_back(sName + "/");
+                mMaxDispStrSize = max(mMaxDispStrSize, sName.size()+1);
             }
             else
             {
                 mDirEntries.push_back(sName);
+                mMaxDispStrSize = max(mMaxDispStrSize, sName.size());
             }
         }
     }
@@ -179,7 +182,7 @@ void FileSystem::normalDisplay()
     // display the contents of the directory
     for (int index = 0; index < sNumEntries; index++)
     {
-        cout << setw(25) << left << mDirEntries[index] << mDirEntryDetails[index] << endl;
+        cout << setw(mMaxDispStrSize+4) << left << mDirEntries[index] << mDirEntryDetails[index] << endl;
     }
 }
 
@@ -189,7 +192,7 @@ void FileSystem::extendedDisplay()
     // display the contents of the directory - handling overflow
     for (int index = mDispStartIndex; index <= mDispEndIndex; index++)
     {
-        cout << setw(25) << left << mDirEntries[index] << mDirEntryDetails[index] << endl;
+        cout << setw(mMaxDispStrSize+4) << left << mDirEntries[index] << mDirEntryDetails[index] << endl;
     }
 }
 
@@ -323,16 +326,10 @@ void FileSystem::changeDir(string nextDir, bool isAppend, bool isRun)
         // save the current directory in backward dir stack
         mBackDirStack.push_back(mPath);
 
-        int pos;
         while (nextDir.find("../") == 0 && mPath.size() >= 1)
         {
-            if (mPath.back() == '/')
-            {
-                pos = mPath.find_last_of("/");
-                mPath = mPath.substr(0, pos);
-            }
-            pos = mPath.find_last_of("/");
-            mPath = mPath.substr(0, pos+1);
+            if (mPath.back() == '/') mPath.pop_back();
+            mPath = mPath.substr(0, mPath.find_last_of("/")+1);
             nextDir = nextDir.substr(3);
         }
         mPath = mPath + nextDir;
@@ -403,7 +400,7 @@ void FileSystem::processCommandMode()
     getline(cin, inputCmd);
     setup_normal_mode();
 
-    if (inputCmd == "")
+    if (inputCmd == "" || inputCmd[0] == KEY_ESC)
     {
         run();
     }
