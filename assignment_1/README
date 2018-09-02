@@ -69,6 +69,22 @@ Current Dir: /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_1/
 => On pressing ESC / ENTER (without any input) switches back to Normal mode.
 => Below are the list of commands supported in Command Mode.
 
+
+    "goto"
+    "copy"
+    "move"
+    "rename"
+    "create_file"
+    "create_dir"
+    "delete_file"
+    "delete_dir"
+    "delete"
+    "search"
+    "snapshot"
+    "clear_trash"
+
+Given below is the detailed description of the above cammands and their usage.
+
 1.
 Command: "goto"
 Minimum Args#: 1
