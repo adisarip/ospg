@@ -19,6 +19,7 @@
 #define KEY_LEFT  "[D"
 
 #define CURSOR_START_POS 1
+#define SEARCH_CURSOR_START_POS 3
 
 // Escape sequences controlling the termninal
 #define SWITCH_ALT_SCREEN_BUFFER  "\e[?1049h"  // save the cursor & switch to alternate screen buffer
@@ -30,6 +31,7 @@
 #define MOVE_CURSOR_UP            "\e[1A"
 #define MOVE_CURSOR_UP_5          "\e[5A"
 #define MOVE_CURSOR_DOWN          "\e[1B"
+#define MOVE_CURSOR_DOWN_2        "\e[2B"
 #define MOVE_CURSOR_RIGHT         "\e[1C"
 #define MOVE_CURSOR_LEFT          "\e[1D"
 #define MOVE_CURSOR_BOTTOM        "\e[1010h"

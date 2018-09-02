@@ -766,6 +766,7 @@ void FileUtils::displaySearchResults()
         cout << s << endl;
     }
     cout << MOVE_CURSOR_TOP << flush;
+    cout << MOVE_CURSOR_DOWN_2 << flush;
 
     char c;
     char in_buff[8];
@@ -800,10 +801,11 @@ void FileUtils::evaluateArrowKeysInSearchResults(string buff)
 {
     int sCursorPos = fetch_cursor_position();
     int sNumEntries = mFoundList.size() + 2;  // additional 2 for search results header
+    buff = buff.substr(0,2); // extract the arrow key string (2 chars)
 
     if (buff == KEY_UP)
     {
-        if (sCursorPos > CURSOR_START_POS)
+        if (sCursorPos > SEARCH_CURSOR_START_POS)
         {
             cout << MOVE_CURSOR_UP << flush;
             sCursorPos--;
@@ -828,13 +830,12 @@ void FileUtils::evaluateArrowKeysInSearchResults(string buff)
 void FileUtils::evaluateEnterKeyInSearchResults()
 {
     int sCursorPos = fetch_cursor_position();
-    unsigned int sIndex = sCursorPos - 3;
-
-    if (sIndex < 0)
+    if (sCursorPos < 3) // Cursor in header section
     {
         return;
     }
 
+    unsigned int sIndex = sCursorPos - 3;
     if (sIndex < mFoundList.size())
     {
         string sCurrentEntry = mFoundList[sIndex];

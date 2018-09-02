@@ -24,9 +24,5 @@ $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.C
 	@echo "Compiled "$<" successfully."
 
 clean:
-	@echo "Cleaning the object files."
-	rm -f core $(OBJECTS)
-
-clean_all:
 	@echo "Cleaning all the object files and binaries."
 	rm -f core $(OBJECTS) $(BINDIR)/$(TARGET)
