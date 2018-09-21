@@ -1,2 +1,4 @@
 this is a readme file
 Learning Socket programming.
+
+mg++ -lcrypto -I/usr/local/opt/openssl/include/ MNode.c Node.C Client.C -o client_node

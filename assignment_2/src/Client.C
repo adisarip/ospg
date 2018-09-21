@@ -12,72 +12,64 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include "Client.H"
 using namespace std;
 
-#define SUCCESS  0
-#define FAILURE -1
-#define BUFFER_SIZE 1024
 
-void error(const char* error_message)
+Client::Client(string ipAddressParm,
+               int portNumParm)
+:mTrackerIpAddress(ipAddressParm)
+,mTrackerPortNum(portNumParm)
+,mpServer(NULL)
 {
-    perror(error_message);
-    exit(EXIT_FAILURE);
+    bzero((char*)&mServerAddress, sizeof(sockaddr_in));
+    bzero(mDataBuffer, BUFFER_SIZE);
 }
 
-int main (int argc, char* argv[])
+
+Client::~Client()
 {
-    int socket_fd;
-    int port_number;
-    int n_bytes;
-    char read_buffer[BUFFER_SIZE];
-    string buffer;
+    // Good Bye !!!
+}
 
-    struct hostent* p_server;
-    struct sockaddr_in server_address;
-    int address_len = sizeof(sockaddr_in);
-    bzero((char*)&server_address, address_len);
 
-    // parse the input arguments
-    if (argc < 3)
-    {
-        cout << "[ERROR] Enter server ip_address & port_number." << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // fetch the port number from the input
-    port_number = atoi(argv[2]);
-
+// connect to the server
+int Client::connectToServer()
+{
     // fetch the server ip address from the input
-    p_server = gethostbyname(argv[1]);
-    if (NULL == p_server)
+    mpServer = gethostbyname(mTrackerIpAddress.c_str());
+    if (NULL == mpServer)
     {
         error("[ERROR] Invalid Server IP ADDRESS (or) NULL");
     }
 
     // create a socket
-    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (socket_fd < 0)
+    int sSocketFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sSocketFd < 0)
     {
         error("[ERROR] Opening a socket");
     }
 
-    server_address.sin_family = AF_INET;
-    bcopy((char*)p_server->h_addr,
-          (char*)&server_address.sin_addr.s_addr,
-          p_server->h_length);
-    server_address.sin_port = htons(port_number);
+    mServerAddress.sin_family = AF_INET;
+    bcopy((char*)mpServer->h_addr,
+          (char*)&mServerAddress.sin_addr.s_addr,
+          mpServer->h_length);
+    mServerAddress.sin_port = htons(mTrackerPortNum);
 
-    // connect to the server
-    if (connect(socket_fd,
-                (struct sockaddr*)&server_address,
-                address_len) < 0)
+    // connect to the Tracker server
+    int sServerAddrLen = sizeof(sockaddr_in);
+    if (connect(sSocketFd,
+                (struct sockaddr*)&mServerAddress,
+                sServerAddrLen) < 0)
     {
-        error("[ERROR] Failed connecting to server");
+        error("[ERROR] Node: Failed connecting to server");
     }
 
-    // sending a file to server
-    
+    return sSocketFd;
+}
 
-    close(socket_fd);
-    return(0);
+void Client::disconnectFromServer(int sockectFdParm)
+{
+    // disconnect from the Server using the socket file descriptor
+    close(sockectFdParm);
 }
