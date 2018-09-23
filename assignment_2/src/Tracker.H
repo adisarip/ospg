@@ -25,7 +25,6 @@ class Tracker : public Server
     void processRequest(NodeRequestMessage_t& msgParm);
     void processSeedingRequest(IN int portNumParm,
                                IN char* nodeIpAddressParm,
-                               IN char* fileParm,
                                IN char* fileHashParm);
 
     void processDownloadRequest(IN int portNumParm,

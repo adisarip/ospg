@@ -19,31 +19,23 @@ class Client
 {
   public:
     // Constructors & Destructors
-    Client(string ipAddressParm,
-           int portNumParm);
+    //Client(string ipAddressParm,
+    //       int portNumParm);
+    Client();
     ~Client();
 
-    inline void error(const char* error_message)
-    {
-        perror(error_message);
-        exit(EXIT_FAILURE);
-    }
-
-    int connectToServer();
-    void disconnectFromServer(int socketFdParm);
- 
-  // private methods
   protected:
-    //void configureClient();
+    //int connectToServer();
+    int connectToServer(string ipAddressParm, int portNumParm);
+    void disconnectFromServer(int socketFdParm);
 
   // private data
-  protected:
+  //protected:
     //int mSocketFd;
-    int mTrackerPortNum;
-    string mTrackerIpAddress;
-    char mDataBuffer[BUFFER_SIZE];
-    struct sockaddr_in mServerAddress;
-    struct hostent* mpServer;
+    //int mTrackerPortNum;
+    //string mTrackerIpAddress;
+    //struct sockaddr_in mServerAddress;
+    //struct hostent* mpServer;
 
 };
 

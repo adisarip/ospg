@@ -20,29 +20,24 @@ class Server
 {
   public:
     // Constructor & Destructor
-    Server(string ipAddressParm,
-           int portNumParm); // from Tracker
+    //Server(string ipAddressParm,
+    //       int portNumParm); // from Tracker
+    Server();
     ~Server();
 
-    inline void error(const char* error_message)
-    {
-        perror(error_message);
-        exit(EXIT_FAILURE);
-    };
-
   // private methods
-  private:
-    void configureServer();
+  protected:
+    void startListening(string ipAddressParm, int portNumParm);
+    void stopListening();
 
   // protected data - for derived class to use
   protected:
     int mSocketFd;
     int mSocketConnFd;
-    int mPortNum;
-    string mIpAddress;
-    char mReadBuffer[BUFFER_SIZE];
-    struct sockaddr_in mServerAddress;
-    struct sockaddr_in mClientAddress;
+    //int mPortNum;
+    //string mIpAddress;
+    //struct sockaddr_in mServerAddress;
+    //struct sockaddr_in mClientAddress;
 };
 
 #endif /* SERVER_H */

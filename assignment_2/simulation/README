@@ -1,0 +1,19 @@
+## Test / Simulation workspace for the Torrent File Sharing System ##
+
+Directory Structure:
+config
+tracker_1
+tracker_2
+node_1
+node_2
+node_3
+...
+
+=> Create the required number of node_x directories based on the number of P2P nodes you are planning to run.
+=> Every Client Node has to be run inside its corresponding node_x directory.
+=> By default the simulation directory will have "3" node_x (with x = 1,2,3) directories.
+=> "config" directory is to store and common configuration files used in the execution/running of the application. (e.g. seeder_list)
+=> The Test Data for transfers in placed under assignment_2/data/ directory.
+=> The torrent file created by the client will be saved in its respective node_x directory.
+=> For download requests the client (who is about to request for a download), needs to copy the torrent file in his node_x directory.
+=> It will be good to select the destination directory for downloads under the node_x directory, however its not mandatory.

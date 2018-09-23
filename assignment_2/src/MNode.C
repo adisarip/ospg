@@ -11,10 +11,6 @@ Usage:
 #include "MTUtils.H"
 using namespace std;
 
-#define IN
-#define OUT
-#define REF
-
 
 void printUsageAndExit()
 {

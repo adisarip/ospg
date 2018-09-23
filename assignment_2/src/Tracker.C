@@ -13,8 +13,8 @@ Tracker Class Implementation
 using namespace std;
 
 Tracker::Tracker(struct TrackerArgs_t inputArgsParm)
-:Server(inputArgsParm.mCurrentTrackerIpAddr,
-        inputArgsParm.mCurrentTrackerPortNum)
+//:Server(inputArgsParm.mCurrentTrackerIpAddr,
+//        inputArgsParm.mCurrentTrackerPortNum)
 {
     mNodesData.clear();
     mArgs = inputArgsParm;
@@ -31,6 +31,7 @@ Tracker::~Tracker()
 // Initialize the Tracker
 void Tracker::init()
 {
+    startListening(mArgs.mCurrentTrackerIpAddr,  mArgs.mCurrentTrackerPortNum);
     mSeedersListFile.open(mArgs.mSeedersListFileName,
                           ios::in | ios::out);
 }
@@ -39,12 +40,16 @@ void Tracker::init()
 void Tracker::run()
 {
     // Tracker instance will always be alive
+    
+    struct sockaddr_in sClientAddress;
+    bzero(&sClientAddress, sizeof(sockaddr_in));
     int sClientAddrLen = sizeof(sockaddr_in);
+    
     while(1)
     {
         // On Success - Connection established with a Node.
         mSocketConnFd = accept(mSocketFd,
-                               (struct sockaddr*)&mClientAddress,
+                               (struct sockaddr*)&sClientAddress,
                                (socklen_t*)&sClientAddrLen);
         if (mSocketConnFd < 0)
         {
@@ -80,7 +85,6 @@ void Tracker::processRequest(NodeRequestMessage_t& msgParm)
         case SEEDING_REQUEST:
             processSeedingRequest(IN msgParm.mNodePortNum,
                                   IN msgParm.mNodeIpAddress,
-                                  IN msgParm.mFile,
                                   IN msgParm.mFileHash);
             break;
         case DOWNLOAD_REQUEST:
@@ -101,15 +105,13 @@ void Tracker::processRequest(NodeRequestMessage_t& msgParm)
 
 void Tracker::processSeedingRequest(int portNumParm,
                                     char* nodeIpAddressParm,
-                                    char* fileParm,
                                     char* fileHashParm)
 {
     cout << "Seeding Request Received ..." << endl;
 
     // save the seeder information for future use
     string sFileHash(fileHashParm);
-    string sSearchKey = string(nodeIpAddressParm) + ":" + to_string(portNumParm);
-    string sNodeInfo = sSearchKey + ":" + string(fileParm);
+    string sNodeInfo = string(nodeIpAddressParm) + ":" + to_string(portNumParm);
 
     // duplication check
     // Verify if the client has sent a duplicate seeding request
@@ -117,7 +119,7 @@ void Tracker::processSeedingRequest(int portNumParm,
     bool isFileExists = false;
     for (string& s : sNodeInfoList)
     {
-        if (sSearchKey == s.substr(0, s.find_last_of(":")))
+        if (sNodeInfo == s)
         {
             isFileExists = true;
             break;
@@ -170,7 +172,7 @@ void Tracker::processDownloadRequest(int portNumParm,
     if (!mNodesData.empty() && itNodeInfo != NodeMap.end())
     {
         sMsg.mResponseType = START_DOWNLOAD;
-        // creating nodes list ip:port:file,ip:port:file,...
+        // creating nodes list ip:port,ip:port,...
         for (string& sInfo : itNodeInfo->second)
         {
             sList += sInfo + ",";

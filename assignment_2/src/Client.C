@@ -12,19 +12,28 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include "MTUtils.H"
 #include "Client.H"
 using namespace std;
 
-
+/*
 Client::Client(string ipAddressParm,
                int portNumParm)
-:mTrackerIpAddress(ipAddressParm)
-,mTrackerPortNum(portNumParm)
-,mpServer(NULL)
+:mTrackerPortNum(portNumParm)
+,mTrackerIpAddress(ipAddressParm)
+,pServer(NULL)
 {
     bzero((char*)&mServerAddress, sizeof(sockaddr_in));
-    bzero(mDataBuffer, BUFFER_SIZE);
+    //bzero(mDataBuffer, BUFFER_SIZE);
+}*/
+
+Client::Client()
+//:pServer(NULL)
+{
+    //bzero((char*)&mServerAddress, sizeof(sockaddr_in));
+    //bzero(mDataBuffer, BUFFER_SIZE);
 }
+
 
 
 Client::~Client()
@@ -34,11 +43,19 @@ Client::~Client()
 
 
 // connect to the server
-int Client::connectToServer()
+/*int Client::connectToServer()
+{
+    int sSocketFd = connectToServer(mTrackerIpAddress, mTrackerPortNum);
+    return sSocketFd;
+}*/
+
+
+int Client::connectToServer(string ipAddressParm, int portNumParm)
 {
     // fetch the server ip address from the input
-    mpServer = gethostbyname(mTrackerIpAddress.c_str());
-    if (NULL == mpServer)
+    struct hostent* pServer;
+    pServer = gethostbyname(ipAddressParm.c_str());
+    if (NULL == pServer)
     {
         error("[ERROR] Invalid Server IP ADDRESS (or) NULL");
     }
@@ -50,16 +67,20 @@ int Client::connectToServer()
         error("[ERROR] Opening a socket");
     }
 
-    mServerAddress.sin_family = AF_INET;
-    bcopy((char*)mpServer->h_addr,
-          (char*)&mServerAddress.sin_addr.s_addr,
-          mpServer->h_length);
-    mServerAddress.sin_port = htons(mTrackerPortNum);
+    struct sockaddr_in sServerAddress;
+    bzero((char*)&sServerAddress, sizeof(sockaddr_in));
+
+
+    sServerAddress.sin_family = AF_INET;
+    bcopy((char*)pServer->h_addr,
+          (char*)&sServerAddress.sin_addr.s_addr,
+          pServer->h_length);
+    sServerAddress.sin_port = htons(portNumParm);
 
     // connect to the Tracker server
     int sServerAddrLen = sizeof(sockaddr_in);
     if (connect(sSocketFd,
-                (struct sockaddr*)&mServerAddress,
+                (struct sockaddr*)&sServerAddress,
                 sServerAddrLen) < 0)
     {
         error("[ERROR] Node: Failed connecting to server");
@@ -68,6 +89,8 @@ int Client::connectToServer()
     return sSocketFd;
 }
 
+
+// disconnect to the server
 void Client::disconnectFromServer(int sockectFdParm)
 {
     // disconnect from the Server using the socket file descriptor

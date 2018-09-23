@@ -1,4 +1,17 @@
-this is a readme file
-Learning Socket programming.
 
-mg++ -lcrypto -I/usr/local/opt/openssl/include/ MNode.c Node.C Client.C -o client_node
+
+mg++ -lcrypto -I/usr/local/opt/openssl/include/ MNode.c Node.C Client.C Server.C -o client_node
+mg++ MTracker.C Tracker.C Server.C -o tracker
+
+./tracker -t localhost:2000 -o localhost:2001 -s sfile.txt -f tlog.txt
+
+./client_node -c localhost:3001 -x localhost:2000 -y localhost:2001 -f log.txt
+
+
+start /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/data/operating_system_concepts.pdf
+
+get /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/torrents/operating_system_concepts.pdf.mtorrent .
+
+remove /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/torrents/operating_system_concepts.pdf.mtorrent
+
+

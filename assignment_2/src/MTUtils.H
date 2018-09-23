@@ -7,12 +7,12 @@
 #define MTUTILS_H
 
 #include <string>
+#include <stdio.h>
 using namespace std;
 
 // defines for function parameters readability
 #define IN
 #define OUT
-#define REF
 
 #define SUCCESS  0
 #define FAILURE -1
@@ -75,10 +75,11 @@ struct NodeArgs_t
 // Data File Metadata
 struct DataFileInfo_t
 {
-    long int mFileSize;  // Data File Size in bytes
-    string mFile;        // Absolute path with FileName
-    string mFileHash;    // Hash of Hash 40 characters
-    string mTorrentFile; // torrent file for the seeding/downloading data file
+    long int mFileSize;     // Data File Size in bytes
+    string mFile;           // Absolute path with FileName
+    string mFileHash;       // Hash of Hash 40 characters
+    string mHashOfFileHash; // Hash of Hash 40 characters
+    string mTorrentFile;    // torrent file for the seeding/downloading data file
 };
 
 
@@ -87,37 +88,44 @@ struct NodeRequestMessage_t
 {
     int  mRequestType;                      // Type of request seeding/download from Node-Tracker
     int  mNodePortNum;                      // Port number of the Node
-    char mNodeIpAddress[SIZE_IP_ADDRESS+1];   // Ip Address of the Node
-    char mFile[SIZE_FILENAME+1];              // Absolute path with FileName
-    char mFileHash[SIZE_SHA1_HASH+1];         // Hash of Hash 40 characters
+    char mNodeIpAddress[SIZE_IP_ADDRESS+1]; // Ip Address of the Node
+    char mFileHash[SIZE_SHA1_HASH+1];       // Hash of Hash 40 characters
 };
 
 // Tracker acknowledgement/response message format
 struct TrackerResponseMessage_t
 {
     int  mResponseType;                     // Tracker response message type
-    char mNodeInfoList[SIZE_NODE_LIST+1];     // Comma seperated list of the seeders info ip:port:file,ip:port:file,...
-};
-
-//
-struct P2PDataPacket_t
-{
-    int  mIndex;
-    char mData[gChunkSize];
+    char mNodeInfoList[SIZE_NODE_LIST+1];     // Comma seperated list of the seeders info ip:port,ip:port,...
 };
 
 // Peer-Peer Request Message Format
 struct P2PRequestMessage_t
 {
     int  mRequestType;
-    int  mNodePortNum;
-    char mNodeIpAddress[SIZE_IP_ADDRESS+1];
-    char mFileHash[SIZE_SHA1_HASH+1];
-    char mFile[SIZE_FILENAME+1]; // Absolute path with FileName
+    char mHashOfHash[SIZE_SHA1_HASH+1];
+};
+
+// Peer-Peer Response Message Format
+struct P2PResponseMessage_t
+{
+    int  mSeedingPortNum;                      // Node thread seeding on PORT
+    char mSeedingIpAddress[SIZE_IP_ADDRESS+1]; // Node thread seeding on IP
+    char mSeedingFile[SIZE_FILENAME+1];        // Absolute path with FileName
+};
+
+// Peer-Peer Data transfer packet Format
+struct P2PDataPacket_t
+{
+    int  mIndex;
+    char mData[gChunkSize];
 };
 
 
-// Peer-Peer Message Format
-
+inline void error(const char* error_message)
+{
+    perror(error_message);
+    exit(EXIT_FAILURE);
+};
 
 #endif /* MTUTILS_H */
