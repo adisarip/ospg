@@ -19,24 +19,12 @@ class Client
 {
   public:
     // Constructors & Destructors
-    //Client(string ipAddressParm,
-    //       int portNumParm);
     Client();
     ~Client();
 
   protected:
-    //int connectToServer();
     int connectToServer(string ipAddressParm, int portNumParm);
     void disconnectFromServer(int socketFdParm);
-
-  // private data
-  //protected:
-    //int mSocketFd;
-    //int mTrackerPortNum;
-    //string mTrackerIpAddress;
-    //struct sockaddr_in mServerAddress;
-    //struct hostent* mpServer;
-
 };
 
 #endif /* CLIENT_H */

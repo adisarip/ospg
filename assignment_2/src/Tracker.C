@@ -13,8 +13,6 @@ Tracker Class Implementation
 using namespace std;
 
 Tracker::Tracker(struct TrackerArgs_t inputArgsParm)
-//:Server(inputArgsParm.mCurrentTrackerIpAddr,
-//        inputArgsParm.mCurrentTrackerPortNum)
 {
     mNodesData.clear();
     mArgs = inputArgsParm;
@@ -159,9 +157,6 @@ void Tracker::processDownloadRequest(int portNumParm,
     cout << "Download Request Received ..." << endl;
 
     string sFileHash(fileHashParm);
-    //cout << "fileHashParm: " << fileHashParm << endl;
-    //cout << "sFileHash: " << sFileHash << endl;
-    //cout << "DEBUG: Nodes Data Size: " << mNodesData.size() << endl;
 
     TrackerResponseMessage_t sMsg;
     bzero(&sMsg, sizeof(TrackerResponseMessage_t));

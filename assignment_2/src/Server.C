@@ -13,15 +13,11 @@
 #include "Server.H"
 using namespace std;
 
-//Server::Server(string ipAddressParm, int portNumParm)
+
 Server::Server()
 :mSocketFd(0)
 ,mSocketConnFd(0)
-//,mPortNum(portNumParm)
-//,mIpAddress(ipAddressParm)
 {
-    //bzero((char*)&sServerAddress, sizeof(sockaddr_in));
-    //bzero((char*)&mClientAddress, sizeof(sockaddr_in));
 }
 
 Server::~Server()
@@ -70,7 +66,7 @@ void Server::startListening(string ipAddressParm, int portNumParm)
 
     struct sockaddr_in sServerAddress;
     bzero((char*)&sServerAddress, sizeof(sockaddr_in));
-    sServerAddress.sin_family = AF_INET; // changed from PF_INET earlier
+    sServerAddress.sin_family = AF_INET;
     sServerAddress.sin_addr.s_addr = INADDR_ANY;
     sServerAddress.sin_port = htons(portNumParm);
 

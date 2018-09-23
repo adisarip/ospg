@@ -30,10 +30,6 @@ using namespace std;
 
 
 Node::Node(struct NodeArgs_t inputArgsParm)
-//:Client(inputArgsParm.mIpAddressTracker1,
-//        inputArgsParm.mPortNumTracker1)
-//:Server(inputArgsParm.mIpAddressNode,
-//        inputArgsParm.mPortNumNode)
 {
     mArgs = inputArgsParm;
     // create a list of listening ports for seeding.
@@ -270,7 +266,6 @@ void Node::sendSeedingRequest()
     sMsg.mRequestType = SEEDING_REQUEST;
     sMsg.mNodePortNum = mArgs.mPortNumNode;
     mArgs.mIpAddressNode.copy(sMsg.mNodeIpAddress, mArgs.mIpAddressNode.size());
-    //mSeedFileInfo.mFile.copy(sMsg.mFile, mSeedFileInfo.mFile.size());
     mSeedFileInfo.mHashOfFileHash.copy(sMsg.mFileHash, mSeedFileInfo.mHashOfFileHash.size());
 
     // Connect to the Tracker Server

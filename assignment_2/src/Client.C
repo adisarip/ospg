@@ -16,38 +16,17 @@
 #include "Client.H"
 using namespace std;
 
-/*
-Client::Client(string ipAddressParm,
-               int portNumParm)
-:mTrackerPortNum(portNumParm)
-,mTrackerIpAddress(ipAddressParm)
-,pServer(NULL)
-{
-    bzero((char*)&mServerAddress, sizeof(sockaddr_in));
-    //bzero(mDataBuffer, BUFFER_SIZE);
-}*/
 
 Client::Client()
-//:pServer(NULL)
 {
-    //bzero((char*)&mServerAddress, sizeof(sockaddr_in));
-    //bzero(mDataBuffer, BUFFER_SIZE);
+    // Nothing as of now
 }
-
 
 
 Client::~Client()
 {
     // Good Bye !!!
 }
-
-
-// connect to the server
-/*int Client::connectToServer()
-{
-    int sSocketFd = connectToServer(mTrackerIpAddress, mTrackerPortNum);
-    return sSocketFd;
-}*/
 
 
 int Client::connectToServer(string ipAddressParm, int portNumParm)

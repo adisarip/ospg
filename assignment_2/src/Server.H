@@ -19,9 +19,6 @@ using namespace std;
 class Server
 {
   public:
-    // Constructor & Destructor
-    //Server(string ipAddressParm,
-    //       int portNumParm); // from Tracker
     Server();
     ~Server();
 
@@ -34,10 +31,6 @@ class Server
   protected:
     int mSocketFd;
     int mSocketConnFd;
-    //int mPortNum;
-    //string mIpAddress;
-    //struct sockaddr_in mServerAddress;
-    //struct sockaddr_in mClientAddress;
 };
 
 #endif /* SERVER_H */
