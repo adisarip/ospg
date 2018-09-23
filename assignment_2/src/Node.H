@@ -40,6 +40,7 @@ class Node : public Client, public Server
     void showDownloads();
 
   protected:
+    void startNodeListener(string nodeIpAddress, int nodePortNumber);
     void displayMenu();
     void tokenize(IN  string cmdStringParm,
                   OUT vector<string>& cmdTokensList);
@@ -50,14 +51,15 @@ class Node : public Client, public Server
                            OUT string& fileHashParm);
     void createTorrentFile();
     void sendSeedingRequest();
-    void startSeeding();
+    void initiateFileTransfer(int socketConnFdParm);
+
 
     void parseInputLine(IN  string lineParm,
                         OUT map<string, string>& configDataParm);
     void readTorrentFile();
     void sendDownloadRequest();
-    void selectPeersForDownload();
-    void startDownload();
+    void selectPeersAndDownload();
+    void startDownload(int socketFdParm, P2PResponseMessage_t rspMsgParm);
 
     void sendRemoveRequest();
 
@@ -72,4 +74,6 @@ class Node : public Client, public Server
     DataFileInfo_t mSeedFileInfo;
     DataFileInfo_t mDownFileInfo;
     DataFileInfo_t mRemoveFileInfo;
+    //thread mListenerThread;
+    vector<thread> mWorkerThreads;
 };

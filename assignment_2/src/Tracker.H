@@ -41,7 +41,6 @@ class Tracker : public Server
     TrackerArgs_t mArgs;
     NodeRequestMessage_t mMsg;
     fstream mSeedersListFile;
-    vector<thread> mWorkers;
     map<string, vector<string>> mNodesData;
 };
 

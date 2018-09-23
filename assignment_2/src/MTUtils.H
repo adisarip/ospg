@@ -18,10 +18,10 @@ using namespace std;
 #define FAILURE -1
 #define CLOSE_AND_EXIT 2
 
-#define SIZE_IP_ADDRESS    16
-#define SIZE_FILENAME      256
-#define SIZE_SHA1_HASH     64
-#define SIZE_NODE_LIST     4096
+#define SIZE_IP_ADDRESS  16
+#define SIZE_FILENAME    256
+#define SIZE_SHA1_HASH   64
+#define SIZE_NODE_LIST   4096
 
 
 // Other global defines
@@ -43,7 +43,11 @@ enum MessageType
     START_DOWNLOAD     = 0x12,
     NO_PEERS_AVAILABLE = 0x13,
     DUPLICATE_ENTRY    = 0x14,
-    ENTRY_REMOVED      = 0x15
+    ENTRY_REMOVED      = 0x15,
+    INITIATE_TRANSFER  = 0x16,
+    REQUEST_APPROVED   = 0x17,
+    TRFR_IN_PROGRESS   = 0x18,
+    LAST_PACKET        = 0x19
 };
 
 // Struct representing all the input args of Tracker
@@ -56,7 +60,6 @@ struct TrackerArgs_t
     string mSeedersListFileName;
     string mLogFile;
 };
-
 
 // structure representing P2P Client Node arguments
 struct NodeArgs_t
@@ -71,7 +74,6 @@ struct NodeArgs_t
     string mLogFile;
 };
 
-
 // Data File Metadata
 struct DataFileInfo_t
 {
@@ -80,8 +82,8 @@ struct DataFileInfo_t
     string mFileHash;       // Hash of Hash 40 characters
     string mHashOfFileHash; // Hash of Hash 40 characters
     string mTorrentFile;    // torrent file for the seeding/downloading data file
+    //string mDestPath;       // filled only for "get" request. Empty for others.
 };
-
 
 // Node-Tracker Request Message Format
 struct NodeRequestMessage_t
@@ -109,15 +111,17 @@ struct P2PRequestMessage_t
 // Peer-Peer Response Message Format
 struct P2PResponseMessage_t
 {
-    int  mSeedingPortNum;                      // Node thread seeding on PORT
-    char mSeedingIpAddress[SIZE_IP_ADDRESS+1]; // Node thread seeding on IP
+    int  mResponseType;                      // Node thread seeding on PORT
+    long int mFileSize;     // Data File Size in bytes
     char mSeedingFile[SIZE_FILENAME+1];        // Absolute path with FileName
 };
 
 // Peer-Peer Data transfer packet Format
 struct P2PDataPacket_t
 {
+    int  mStatus;
     int  mIndex;
+    int  mChunkSize;
     char mData[gChunkSize];
 };
 
