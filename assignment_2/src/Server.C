@@ -15,38 +15,39 @@ using namespace std;
 
 
 Server::Server()
-:mSocketFd(0)
-,mSocketConnFd(0)
 {
+    // Constructor
 }
 
 Server::~Server()
 {
-    stopListening();
+    // Destructor
 }
 
 
-void Server::stopListening()
+void Server::stopListening(int socketFdParm, int socketConnFdParm)
 {
-    close(mSocketFd);
-    close(mSocketConnFd);
+    close(socketFdParm);
+    close(socketConnFdParm);
 }
 
 // This function intializes a server for the Tracker / Client Node.
 // It involves : socket() -> bind() -> listen()
 // and will be waiting for incoming requests on a particular port.
-void Server::startListening(string ipAddressParm, int portNumParm)
+int Server::startListening(string ipAddressParm, int portNumParm)
 {
+    cout << "Request to listen on port: " << portNumParm << endl;
+    
     // Create the Socket
-    mSocketFd = socket(AF_INET, SOCK_STREAM, 0);
-    if (mSocketFd < 0)
+    int sSocketFd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sSocketFd < 0)
     {
         error("[ERROR] Socket creation failed");
     }
 
     // set the socket for re-use
     int status = 1;
-    if (setsockopt(mSocketFd,
+    if (setsockopt(sSocketFd,
                    SOL_SOCKET,
                    SO_REUSEADDR,
                    &status,
@@ -55,7 +56,7 @@ void Server::startListening(string ipAddressParm, int portNumParm)
         error("[ERROR] Socket Re-Use Addr setting failed");
     }
 
-    if (setsockopt(mSocketFd,
+    if (setsockopt(sSocketFd,
                    SOL_SOCKET,
                    SO_REUSEPORT,
                    &status,
@@ -71,7 +72,7 @@ void Server::startListening(string ipAddressParm, int portNumParm)
     sServerAddress.sin_port = htons(portNumParm);
 
     // Binding socket to the port
-    if (bind(mSocketFd,
+    if (bind(sSocketFd,
              (struct sockaddr*)&sServerAddress,
              sizeof(sockaddr_in)) < 0)
     {
@@ -79,13 +80,14 @@ void Server::startListening(string ipAddressParm, int portNumParm)
     }
 
     // Start Listening on the port
-    if (listen(mSocketFd, MAX_CLIENTS) < 0)
+    if (listen(sSocketFd, MAX_CLIENTS) < 0)
     {
         error("[ERROR] Socket listening failed");
     }
     else
     {
-        cout << "Listening on port: " << portNumParm << endl;
+        cout << "Started Listening on port: " << portNumParm << endl;
     }
+    return sSocketFd;
 }
 

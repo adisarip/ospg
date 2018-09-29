@@ -39,8 +39,12 @@ class Node : public Client, public Server
     void removeFileTorrentInfo();
     void showDownloads();
 
+    void pubTestMethod(int i);
+
   protected:
-    void startNodeListener(string nodeIpAddress, int nodePortNumber);
+    void protTestMethod(int i);
+    void startNodeListener(string nodeIpAddressParm,
+                           int nodePortNumberParm);
     void displayMenu();
     void tokenize(IN  string cmdStringParm,
                   OUT vector<string>& cmdTokensList);
@@ -50,20 +54,21 @@ class Node : public Client, public Server
                            IN  int fileSizeParm,
                            OUT string& fileHashParm);
     void createTorrentFile();
+    void updateFileHashTable();
     void sendSeedingRequest();
     void initiateFileTransfer(int socketConnFdParm);
-
 
     void parseInputLine(IN  string lineParm,
                         OUT map<string, string>& configDataParm);
     void readTorrentFile();
     void sendDownloadRequest();
     void selectPeersAndDownload();
-    void startDownload(int socketFdParm, P2PResponseMessage_t rspMsgParm);
+    void startDownload(int socketFdParm);
 
     void sendRemoveRequest();
 
   private:
+    struct sockaddr_in mClientAddress;
     string mCmd;
     string mArg1;
     string mArg2;
@@ -76,4 +81,5 @@ class Node : public Client, public Server
     DataFileInfo_t mRemoveFileInfo;
     //thread mListenerThread;
     vector<thread> mWorkerThreads;
+    map<string, long int> mFileHashTable; // <chunkHash, chunkIndex>
 };

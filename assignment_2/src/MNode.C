@@ -7,6 +7,7 @@ Usage:
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <sys/resource.h>
 #include "Node.H"
 #include "MTUtils.H"
 using namespace std;

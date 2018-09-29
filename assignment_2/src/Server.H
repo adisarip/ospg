@@ -24,13 +24,13 @@ class Server
 
   // private methods
   protected:
-    void startListening(string ipAddressParm, int portNumParm);
-    void stopListening();
+    int startListening(string ipAddressParm, int portNumParm);
+    void stopListening(int socketFdParm, int socketConnFdParm);
 
   // protected data - for derived class to use
-  protected:
-    int mSocketFd;
-    int mSocketConnFd;
+  //protected:
+    //int mSocketFd;
+    //int mSocketConnFd;
 };
 
 #endif /* SERVER_H */

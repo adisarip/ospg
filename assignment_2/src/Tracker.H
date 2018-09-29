@@ -38,6 +38,9 @@ class Tracker : public Server
     void sendResponse();
 
     // Tracker Data
+  private:
+    int mSocketFd;
+    int mSocketConnFd;
     TrackerArgs_t mArgs;
     NodeRequestMessage_t mMsg;
     fstream mSeedersListFile;

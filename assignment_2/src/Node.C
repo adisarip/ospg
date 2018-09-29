@@ -16,11 +16,14 @@
 /******************************************************************************************************/
 
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <openssl/sha.h>
 #include <sys/stat.h>
 #include <iostream>
+#include <iomanip>
 #include<sstream>
 #include<fstream>
 #include <thread>
@@ -33,11 +36,6 @@ using namespace std;
 Node::Node(struct NodeArgs_t inputArgsParm)
 {
     mArgs = inputArgsParm;
-    // reserving 100 port numbers for the P2P node.
-    for (int sPortNum = mArgs.mPortNumNode; sPortNum < mArgs.mPortNumNode+100; sPortNum++)
-    {
-        mListeningPortsQ.push(sPortNum);
-    }
 }
 
 
@@ -45,6 +43,10 @@ Node::~Node()
 {
     // destructor
 }
+
+void Node::pubTestMethod(int i) {printf("Inside Node:pubTestMethod:%d\n", i);};
+
+void Node::protTestMethod(int i) {printf("Inside Node:protTestMethod:%d\n", i);};
 
 
 void Node::displayMenu()
@@ -73,10 +75,13 @@ void Node::tokenize(IN  string cmdStringParm,
 int Node::init()
 {
     // Start the listener thread for P2P Node requests.
+    cout << "[INFO] Node Listening on: "
+         << mArgs.mIpAddressNode << ":" << mArgs.mPortNumNode << endl;
     thread sListenerThread(&Node::startNodeListener,
                            this,
                            mArgs.mIpAddressNode,
                            mArgs.mPortNumNode);
+
     if (sListenerThread.joinable())
     {
         sListenerThread.detach();
@@ -218,9 +223,144 @@ void Node::showDownloads()
 
 
 /******************************************************************************************************/
+/*                                           Threads Functions                                        */
+/******************************************************************************************************/
+void Node::startNodeListener(string nodeIpAddressParm, int nodePortNumberParm)
+{
+    int sSocketFd = startListening(nodeIpAddressParm, nodePortNumberParm);
+    struct sockaddr_in sClientAddress;
+    bzero(&sClientAddress, sizeof(sockaddr_in));
+    int sClientAddrLen = sizeof(sockaddr_in);
+    int sSocketConnFd = 0;
+
+    while (1)
+    {
+        sSocketConnFd = accept(sSocketFd,
+                               (struct sockaddr*)&sClientAddress,
+                               (socklen_t*)&sClientAddrLen);
+
+        if (sSocketConnFd < 0)
+        {
+            error("[ERROR] Node Listener: Socket accept failed");
+        }
+        else
+        {
+            cout << "[INFO] Node Listener: P2P First Connection established." << endl;
+
+        }
+
+        initiateFileTransfer(sSocketConnFd);
+
+        // Fire Worker thread for file transfer
+        /*thread  sWorkerThread(&Node::initiateFileTransfer,
+                              this,
+                              nodeIpAddressParm,
+                              sSocketConnFd);
+                              //sLisMsg.mNewPortNum);
+
+        printf("[DEBUG] startNodeListener:04\n");
+        //mWorkerThreads.push_back(move(sWorkerThread));
+        if (sWorkerThread.joinable())
+        {
+            sWorkerThread.detach();
+            cout << "[INFO] P2P Node: Worker Thread Detached" << endl;
+        }*/
+    }
+}
+
+void Node::initiateFileTransfer(int socketConnFdParm)
+{
+    P2PRequestMessage_t sReqMsg;
+    bzero(&sReqMsg, sizeof(P2PRequestMessage_t));
+    int nBytes = read(socketConnFdParm,
+                      (P2PRequestMessage_t*)&sReqMsg,
+                      sizeof(P2PRequestMessage_t));
+
+    cout << nBytes << " Bytes received" << endl;
+    //cout << "[DEBUG] Node: mMsg.mRequestType: " << sReqMsg.mRequestType << endl;
+    //cout << "[DEBUG] Node: mMsg.mHashOfHash: "  << sReqMsg.mHashOfHash  << endl;
+
+    string sSeedingFileInfo;
+    long int sFileSize;
+    string sSeedingFile;
+    if (sReqMsg.mRequestType == DOWNLOAD_REQUEST)
+    {
+        // get the seeding file path from seeder based on file hash
+        sSeedingFileInfo = mSeedingFilesList[sReqMsg.mHashOfHash];
+    }
+    sFileSize = stol(sSeedingFileInfo.substr(0,sSeedingFileInfo.find_last_of(":")));
+    sSeedingFile = sSeedingFileInfo.substr(sSeedingFileInfo.find_last_of(":")+1);
+    //printf("sFileSize:%d  sSeedingFile:%s\n", sFileSize, sSeedingFile.c_str());
+
+    // Send download request acknowledgement
+    P2PResponseMessage_t sRspMsg;
+    bzero(&sRspMsg, sizeof(P2PResponseMessage_t));
+    sRspMsg.mResponseType = REQUEST_APPROVED;
+    sRspMsg.mFileSize = sFileSize;
+    sSeedingFile.copy(sRspMsg.mSeedingFile, sSeedingFile.size());
+
+    nBytes = write(socketConnFdParm,
+                   &sRspMsg,
+                   sizeof(P2PResponseMessage_t));
+    if (nBytes < 0)
+    {
+        error("[ERROR] P2P Node: Failed to send download request acknowledgement");
+    }
+
+    // now client should ask to initiate the file transfer [from startDownload() function]
+    int sSeedingFileFd = open(sSeedingFile.c_str(), O_RDONLY);
+    P2PDataRequest_t sDataReq;
+    P2PDataResponse_t sDataResp;
+    do
+    {
+        bzero(&sDataReq, sizeof(P2PDataRequest_t));
+        nBytes = read(socketConnFdParm,
+                      (P2PDataRequest_t*)&sDataReq,
+                      sizeof(P2PDataRequest_t));
+
+        if (sDataReq.mRequestType == STOP_TRFR)
+        {
+            cout << "[INFO] End Of Transfer requested." << endl;
+            break;
+        }
+        
+
+        // Fill the data packet
+        memset(&sDataResp, 0, sizeof(P2PDataResponse_t));
+        string sChunkHash(sDataReq.mReqChunkHash);
+        long int sChunkIndex = mFileHashTable[sChunkHash];
+
+        sDataResp.mChunkSize = pread(sSeedingFileFd,
+                                     sDataResp.mData,
+                                     gChunkSize,
+                                     sChunkIndex);
+        sDataResp.mIndex = sChunkIndex;
+
+        // send the data packet
+        cout << "[INFO] Sending Packet Index:" << sDataResp.mIndex
+             << "    Packet Size:" << sDataResp.mChunkSize << endl;
+
+        nBytes = write(socketConnFdParm,
+                       &sDataResp,
+                       sizeof(P2PDataResponse_t));
+        if (nBytes < 0)
+        {
+            error("[ERROR] P2P Node: Failed to send the data packet");
+        }
+
+    }while(1);
+
+    cout << "[INFO] Node: File Transfer Complete." << endl;
+    close(sSeedingFileFd);
+    close(socketConnFdParm);
+
+    return;
+}
+
+
+/******************************************************************************************************/
 /*                                          Helper Functions                                          */
 /******************************************************************************************************/
-
 
 void Node::createTorrentFile()
 {
@@ -264,6 +404,26 @@ void Node::createTorrentFile()
 }
 
 
+void Node::updateFileHashTable()
+{
+    long int sFileSize = mSeedFileInfo.mFileSize;
+    int sNumChunks = (sFileSize / gChunkSize);
+    int sLastChunkSize = (sFileSize % gChunkSize);
+    if (sLastChunkSize > 0)
+    {
+        sNumChunks++;
+    }
+
+    string sChunkHash;
+    int sChunkHashSize = 20;
+    for (int sIndex = 0; sIndex < sNumChunks; sIndex++)
+    {
+        sChunkHash = mSeedFileInfo.mFileHash.substr(sIndex*sChunkHashSize,sChunkHashSize);
+        mFileHashTable[sChunkHash] = sIndex * gChunkSize;
+    }
+}
+
+
 // send a request to Tracker for seeding a file.
 void Node::sendSeedingRequest()
 {
@@ -302,6 +462,9 @@ void Node::sendSeedingRequest()
 
     // Add the file into the Node seeding list
     mSeedingFilesList[mSeedFileInfo.mHashOfFileHash] = to_string(mSeedFileInfo.mFileSize)+":"+mSeedFileInfo.mFile;
+
+    // Add the seeding file info to Hash table
+    updateFileHashTable();
 }
 
 
@@ -382,7 +545,8 @@ void Node::sendDownloadRequest()
         error("[ERROR] Node: Read from Tracker Socket failed");
     }
 
-    cout << "Node: Tracker Response is ... ##" << sResponseMsg.mResponseType << "##" << sResponseMsg.mNodeInfoList << endl;
+    cout << "Node: Tracker Response is ... ##" << sResponseMsg.mResponseType
+         << "##" << sResponseMsg.mNodeInfoList << endl;
     
     // Disconnect to the Tracker Server
     disconnectFromServer(sSocketFd);
@@ -405,19 +569,21 @@ void Node::selectPeersAndDownload()
     string sSeedNodeIpAddr = sSeedNodeInfo.substr(0, sSeedNodeInfo.find_last_of(":"));
     int sSeedNodePortNum = stoi(sSeedNodeInfo.substr(sSeedNodeInfo.find_last_of(":")+1));
 
-    // Send a request to connect to the seeding peer node
+    // Send a request to node listener of the seeding peer node
     // test assuming 1 node seeding
+
+    // Re-connect to Peer node for download
+    int sSocketFd = connectToServer(sSeedNodeIpAddr, sSeedNodePortNum);
 
     P2PRequestMessage_t sReqMsg;
     bzero(&sReqMsg, sizeof(P2PRequestMessage_t));
     sReqMsg.mRequestType = DOWNLOAD_REQUEST;
     mDownFileInfo.mHashOfFileHash.copy(sReqMsg.mHashOfHash, mDownFileInfo.mFileHash.size());
 
-    // connect to a peer node
-    int sSocketFd = connectToServer(sSeedNodeIpAddr, sSeedNodePortNum);
-
     // sending message to Peer node
-    int nBytes = write(sSocketFd, &sReqMsg, sizeof(P2PRequestMessage_t));
+    int nBytes = write(sSocketFd,
+                   &sReqMsg,
+                   sizeof(P2PRequestMessage_t));
     if (nBytes < 0)
     {
         error("[ERROR] Node: Write failed");
@@ -436,58 +602,95 @@ void Node::selectPeersAndDownload()
 
     if (sRspMsg.mResponseType == REQUEST_APPROVED)
     {
-        startDownload(sSocketFd, sRspMsg);
+        startDownload(sSocketFd);
     }
 }
 
 
-void Node::startDownload(int socketFdParm, P2PResponseMessage_t rspMsgParm)
+//void Node::startDownload(int socketFdParm, P2PResponseMessage_t rspMsgParm)
+void Node::startDownload(int socketFdParm)
 {
     cout << "Download Started ..." << endl;
 
+    int nBytes = 0;
     string sDestPath = mArg2;      // destination path to save the downloaded file
     string sDestFile = sDestPath +"/"+mDownFileInfo.mFile.substr(mDownFileInfo.mFile.find_last_of("/")+1);
 
     // pre allocating the file buffer with the required size
-    char c;
+    /*char c;
     bzero(&c, sizeof(char));
     ofstream sOutFileStream;
     sOutFileStream.open(sDestFile, ios::binary | ios::out);
     sOutFileStream.write(&c, rspMsgParm.mFileSize);
-    sOutFileStream.close();
+    sOutFileStream.close();*/
 
-    // calculate the number of logical chunks of size 512KB each
-    int sNumChunks = (rspMsgParm.mFileSize / gChunkSize);
-    int sLastChunkSize = (rspMsgParm.mFileSize % gChunkSize);
+    //ofstream sOutFileStream;
+    //sOutFileStream.open(sDestFile, ios::binary | ios::out);
 
-    P2PRequestMessage_t sReqMsg;
-    bzero(&sReqMsg, sizeof(P2PRequestMessage_t));
-    sReqMsg.mRequestType = INITIATE_TRANSFER;
+    int sDataFileFd = open(sDestFile.c_str(),
+                           O_WRONLY | O_CREAT | O_TRUNC | O_APPEND,
+                           0644);
     
-    // sending message to Seeder node
-    int nBytes = write(socketFdParm,
-                       &sReqMsg,
-                       sizeof(P2PRequestMessage_t));
+    // get the download file info
+    int sChunkHashSize = 20;
+    string sFileHash = mDownFileInfo.mFileHash;
+    int sNumChunks = sFileHash.size() / sChunkHashSize;
+    string sChunkHash;
+    P2PDataRequest_t sDataReqMsg;
+    P2PDataResponse_t sDataRspMsg;
+    for (int sIndex = 0; sIndex < sNumChunks; sIndex++)
+    {
+        bzero(&sDataReqMsg, sizeof(P2PDataRequest_t));
+        sDataReqMsg.mRequestType = SEND_PACKET;
+        sChunkHash = sFileHash.substr(sIndex * sChunkHashSize, sChunkHashSize);
+        sChunkHash.copy(sDataReqMsg.mReqChunkHash, sChunkHashSize);
+
+        // sending message to Seeder node
+        cout << "Request for packet Index:" << sIndex << "/" << sNumChunks << endl;
+        nBytes = write(socketFdParm,
+                       &sDataReqMsg,
+                       sizeof(P2PDataRequest_t));
+        if (nBytes < 0)
+        {
+            error("[ERROR] Request packet failed");
+        }
+
+        // read the seeder response
+        long int sIndexReceived = 0;
+        do
+        {
+            usleep(10000);
+            memset(&sDataRspMsg, 0, sizeof(P2PDataResponse_t));
+            nBytes = read(socketFdParm,
+                        (P2PDataResponse_t*)&sDataRspMsg,
+                        sizeof(P2PDataResponse_t));
+            sIndexReceived = (sDataRspMsg.mIndex / gChunkSize);
+            if (sIndexReceived == sIndex)
+            {
+                break;
+            }
+        }while(1);
+
+
+        cout << "Received Packet:" << sDataRspMsg.mIndex
+             << "  Data Chunk Size:" << sDataRspMsg.mChunkSize << endl;
+        pwrite(sDataFileFd,
+               sDataRspMsg.mData,
+               sDataRspMsg.mChunkSize,
+               sDataRspMsg.mIndex);
+    }
+    close (sDataFileFd);
+    
+    // send the request to stop the data transfer
+    bzero(&sDataReqMsg, sizeof(P2PDataRequest_t));
+    sDataReqMsg.mRequestType = STOP_TRFR;
+    nBytes = write(socketFdParm,
+                   &sDataReqMsg,
+                   sizeof(P2PDataRequest_t));
     if (nBytes < 0)
     {
-        error("[ERROR] Node: Write failed");
+        error("[ERROR] Failed to send STOP_TRFR request");
     }
-
-    P2PDataPacket_t sP2PDataPacket;
-    bzero(&sP2PDataPacket, sizeof(P2PDataPacket_t));
-    nBytes = read(socketFdParm,
-                  (P2PDataPacket_t*)&sP2PDataPacket,
-                  sizeof(P2PDataPacket_t));
-    sOutFileStream.open(sDestFile, ios::binary | ios::out);
-    while (sP2PDataPacket.mStatus != LAST_PACKET)
-    {
-        sOutFileStream.write(sP2PDataPacket.mData, sP2PDataPacket.mChunkSize);
-        bzero(&sP2PDataPacket, sizeof(P2PDataPacket_t));
-        nBytes = read(socketFdParm,
-                      (P2PDataPacket_t*)&sP2PDataPacket,
-                      sizeof(P2PDataPacket_t));
-    }
-    sOutFileStream.close();
 }
 
 
@@ -524,125 +727,6 @@ void Node::sendRemoveRequest()
     
     // Disconnect to the Tracker Server
     disconnectFromServer(sSocketFd);
-}
-
-
-/******************************************************************************************************/
-/*                                           Threads Functions                                        */
-/******************************************************************************************************/
-void Node::startNodeListener(string nodeIpAddress, int nodePortNumber)
-{
-    while (1)
-    {
-        startListening(nodeIpAddress, nodePortNumber);
-
-        // On Success - Connection established with a Node.
-        struct sockaddr_in sClientAddress;
-        bzero(&sClientAddress, sizeof(sockaddr_in));
-        int sClientAddrLen = sizeof(sockaddr_in);
-
-        int sSocketConnFd = accept(mSocketFd,
-                                   (struct sockaddr*)&sClientAddress,
-                                   (socklen_t*)&sClientAddrLen);
-        if (sSocketConnFd < 0)
-        {
-            error("[ERROR] Node Listener: Socket accept failed");
-        }
-        else
-        {
-            cout << "[INFO] Node Listener: P2P Connection established." << endl;
-            // Fire Worker thread for file transfer
-            thread  sWorkerThread(&Node::initiateFileTransfer, this, sSocketConnFd);
-            mWorkerThreads.push_back(move(sWorkerThread));
-            sWorkerThread.detach();
-        }
-    }
-}
-
-
-// Initiate file transfer on a thread
-void Node::initiateFileTransfer(int socketConnFdParm)
-{
-    //mutex sGodrej;
-    P2PRequestMessage_t sReqMsg;
-    bzero(&sReqMsg, sizeof(P2PRequestMessage_t));
-    int nBytes = read(socketConnFdParm,
-                      (P2PRequestMessage_t*)&sReqMsg,
-                      sizeof(P2PRequestMessage_t));
-
-    cout << nBytes << " Bytes received" << endl;
-    cout << "[DEBUG] Node: mMsg.mRequestType: " << sReqMsg.mRequestType << endl;
-    cout << "[DEBUG] Node: mMsg.mHashOfHash: "  << sReqMsg.mHashOfHash  << endl;
-
-    string sSeedingFileInfo;
-    long int sFileSize;
-    string sSeedingFile;
-    if (sReqMsg.mRequestType == DOWNLOAD_REQUEST)
-    {
-        // get the seeding file path from seeder based on file hash
-        sSeedingFileInfo = mSeedingFilesList[sReqMsg.mHashOfHash];
-    }
-    sFileSize = stol(sSeedingFileInfo.substr(0,sSeedingFileInfo.find_last_of(":")));
-    sSeedingFile = sSeedingFileInfo.substr(sSeedingFileInfo.find_last_of(":")+1);
-
-    // Send download request acknowledgement
-    P2PResponseMessage_t sRspMsg;
-    bzero(&sRspMsg, sizeof(P2PResponseMessage_t));
-    sRspMsg.mResponseType = REQUEST_APPROVED;
-    sRspMsg.mFileSize = sFileSize;
-    sSeedingFile.copy(sRspMsg.mSeedingFile, sSeedingFile.size());
-
-    nBytes = write(socketConnFdParm,
-                   &sRspMsg,
-                   sizeof(P2PResponseMessage_t));
-    if (nBytes < 0)
-    {
-        error("[ERROR] P2P Node: Failed to send download request acknowledgement");
-    }
-
-    bzero(&sReqMsg, sizeof(P2PRequestMessage_t));
-    nBytes = read(socketConnFdParm,
-                  (P2PRequestMessage_t*)&sReqMsg,
-                  sizeof(P2PRequestMessage_t));
-    
-    if (sReqMsg.mRequestType == INITIATE_TRANSFER)
-    {
-        // calculate the number of logical chunks of size 512KB each
-        int sNumChunks = (sFileSize / gChunkSize);
-        int sLastChunkSize = (sFileSize % gChunkSize);
-
-        P2PDataPacket_t sP2PDataPacket;
-        bzero(&sP2PDataPacket, sizeof(P2PDataPacket_t));
-
-        ifstream sSeedingFileStream;
-        sSeedingFileStream.open(sSeedingFile, ifstream::binary);
-
-        for (int sIndex=0; sIndex <= sNumChunks; sIndex++)
-        {
-            sP2PDataPacket.mIndex = sIndex;
-            sSeedingFileStream.seekg(sIndex*gChunkSize);
-            if (sIndex == sNumChunks && sLastChunkSize > 0)
-            {
-                sP2PDataPacket.mStatus = LAST_PACKET;
-                sP2PDataPacket.mChunkSize = sLastChunkSize;
-                sSeedingFileStream.read(sP2PDataPacket.mData, sLastChunkSize);
-            }
-            else
-            {
-                sP2PDataPacket.mStatus = TRFR_IN_PROGRESS;
-                sP2PDataPacket.mChunkSize = gChunkSize;
-                sSeedingFileStream.read(sP2PDataPacket.mData, gChunkSize);
-            }
-            nBytes = write(socketConnFdParm,
-                           &sP2PDataPacket,
-                           sizeof(sP2PDataPacket));
-            if (nBytes < 0)
-            {
-                error("[ERROR] P2P Node: Failed to send the data packet");
-            }
-        }
-        cout << "[INFO] Node: File Transfer Complete." << endl;
-    }
 }
 
 
@@ -699,15 +783,15 @@ void Node::constructSha1Hash(IN  string fileNameParm,
     ifstream ifFileData;
 
     // calculate the number of logical chunks of size 512KB each
-    int sNumChunks = (fileSizeParm / gChunkSize);
+    int sNumFullChunks = (fileSizeParm / gChunkSize);
     int sLastChunkSize = (fileSizeParm % gChunkSize);
 
     fileHashParm.clear();
     ifFileData.open(fileNameParm, ifstream::binary);
-    for (int sIndex=0; sIndex <= sNumChunks; sIndex++)
+    for (int sIndex=0; sIndex <= sNumFullChunks; sIndex++)
     {
         ifFileData.seekg(sIndex*gChunkSize);
-        if (sIndex == sNumChunks && sLastChunkSize > 0)
+        if (sIndex == sNumFullChunks && sLastChunkSize > 0)
         {
             ifFileData.read(sDataChunk, sLastChunkSize);
             // calculate the has of the logical chunk of 512KB

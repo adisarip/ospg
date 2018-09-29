@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <iostream>
+#include<stdio.h>
 #include <string>
 #include "MTUtils.H"
 #include "Client.H"
@@ -26,6 +27,11 @@ Client::Client()
 Client::~Client()
 {
     // Good Bye !!!
+}
+
+void Client::testMethod(int i)
+{
+    printf("Inside Client::testMethod:%d\n", i);
 }
 
 
@@ -62,6 +68,7 @@ int Client::connectToServer(string ipAddressParm, int portNumParm)
                 (struct sockaddr*)&sServerAddress,
                 sServerAddrLen) < 0)
     {
+        cout << "portNumParm:" << portNumParm << endl;
         error("[ERROR] Node: Failed connecting to server");
     }
 

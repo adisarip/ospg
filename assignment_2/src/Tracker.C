@@ -29,7 +29,9 @@ Tracker::~Tracker()
 // Initialize the Tracker
 void Tracker::init()
 {
-    startListening(mArgs.mCurrentTrackerIpAddr,  mArgs.mCurrentTrackerPortNum);
+    cout << "[INFO] Tracker listening on: "
+    << mArgs.mCurrentTrackerIpAddr << ":" << mArgs.mCurrentTrackerPortNum << endl;
+    mSocketFd = startListening(mArgs.mCurrentTrackerIpAddr,  mArgs.mCurrentTrackerPortNum);
     mSeedersListFile.open(mArgs.mSeedersListFileName,
                           ios::in | ios::out);
 }
