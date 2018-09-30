@@ -6,4 +6,5 @@ src/bkp/
 client_node
 tracker
 bkp/
+obj/*.o
 README_NOTES

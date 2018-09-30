@@ -35,9 +35,7 @@ void Server::stopListening(int socketFdParm, int socketConnFdParm)
 // It involves : socket() -> bind() -> listen()
 // and will be waiting for incoming requests on a particular port.
 int Server::startListening(string ipAddressParm, int portNumParm)
-{
-    cout << "Request to listen on port: " << portNumParm << endl;
-    
+{   
     // Create the Socket
     int sSocketFd = socket(AF_INET, SOCK_STREAM, 0);
     if (sSocketFd < 0)
@@ -83,10 +81,6 @@ int Server::startListening(string ipAddressParm, int portNumParm)
     if (listen(sSocketFd, MAX_CLIENTS) < 0)
     {
         error("[ERROR] Socket listening failed");
-    }
-    else
-    {
-        cout << "Started Listening on port: " << portNumParm << endl;
     }
     return sSocketFd;
 }

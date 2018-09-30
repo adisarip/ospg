@@ -25,7 +25,6 @@ class Client
   protected:
     int connectToServer(string ipAddressParm, int portNumParm);
     void disconnectFromServer(int socketFdParm);
-    void testMethod(int i);
 };
 
 #endif /* CLIENT_H */

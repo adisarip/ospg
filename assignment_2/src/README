@@ -1,9 +1,0 @@
-
-
-mg++ -lcrypto -lpthread -I/usr/local/opt/openssl/include/ MNode.c Node.C Client.C Server.C -o client_node
-mg++ MTracker.C Tracker.C Server.C -o tracker
-
-./tracker -t localhost:2000 -o localhost:2001 -s sfile.txt -f tlog.txt
-./client_node -c localhost:3000 -x localhost:2000 -y localhost:2001 -f log.txt
-./client_node -c localhost:4000 -x localhost:2000 -y localhost:2001 -f log.txt
-

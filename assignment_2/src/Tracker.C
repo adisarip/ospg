@@ -55,18 +55,15 @@ void Tracker::run()
         {
             error("Socket accept failed");
         }
-        else
-        {
-            cout << "Connection established." << endl;
-        }
 
         // fetch the request from the socket
         int nBytes = read(mSocketConnFd,
                           (NodeRequestMessage_t*)&mMsg,
                           sizeof(NodeRequestMessage_t));
-
-        cout << nBytes << " Bytes received" << endl;
-        cout << "[DEBUG] Tracker: mMsg.mFileHash: " << mMsg.mFileHash << endl;
+        if (nBytes < 0)
+        {
+            error("[ERROR] Tracker: Failed receiving message from Node");
+        }
 
         // Do Something with the received request
         processRequest(IN mMsg);
@@ -77,7 +74,7 @@ void Tracker::run()
 // Process the request
 void Tracker::processRequest(NodeRequestMessage_t& msgParm)
 {
-    cout << "Processing the request ..." << endl;
+    cout << "[INFO] Processing the request ..." << endl;
 
     // check the type of in-coming request
     switch(msgParm.mRequestType)
