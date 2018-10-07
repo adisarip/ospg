@@ -39,16 +39,13 @@ class Node : public Client, public Server
     void removeFileTorrentInfo();
     void showDownloads();
 
-    void pubTestMethod(int i);
-
   protected:
-    void protTestMethod(int i);
     void startNodeListener(string nodeIpAddressParm,
                            int nodePortNumberParm);
     void displayMenu();
     void tokenize(IN  string cmdStringParm,
                   OUT vector<string>& cmdTokensList);
-
+    string getCurrentDirPath();
     string constructHashOfHash(IN string dataFileHashParm);
     void constructSha1Hash(IN  string fileNameParm,
                            IN  int fileSizeParm,
@@ -75,6 +72,8 @@ class Node : public Client, public Server
     vector<string> mSeedingPeersList;
     queue<int> mListeningPortsQ;
     map<string, string> mSeedingFilesList;
+    map<string, string> mDownloadFilesList;
+    map<string, string> mDownloadFilesTracker;
     NodeArgs_t mArgs; // Node Input Arguments
     DataFileInfo_t mSeedFileInfo;
     DataFileInfo_t mDownFileInfo;

@@ -213,7 +213,35 @@ void Node::removeFileTorrentInfo()
 
 void Node::showDownloads()
 {
-    // @TODO
+    string sSeedingFileInfo;
+    string sSeedingFile;
+
+    for (map<string, string>::iterator it = mSeedingFilesList.begin();
+         it != mSeedingFilesList.end();
+         it++)
+    {
+        sSeedingFileInfo = it->second;
+        sSeedingFile = sSeedingFileInfo.substr(sSeedingFileInfo.find_last_of(":")+1);
+        sSeedingFile = sSeedingFile.substr(sSeedingFile.find_last_of("/")+1);
+        cout << "[S] " << sSeedingFile << endl;
+    }
+
+    string sDownloadFileInfo;
+    string sDownloadFile;
+    string sHashOfFileHash;
+    string sFileTracker;
+
+    for (map<string, string>::iterator it = mDownloadFilesList.begin();
+         it != mDownloadFilesList.end();
+         it++)
+    {
+        sHashOfFileHash = it->first;
+        sFileTracker = mDownloadFilesTracker[sHashOfFileHash];
+        sDownloadFileInfo = it->second;
+        sDownloadFile = sDownloadFileInfo.substr(sDownloadFileInfo.find_last_of(":")+1);
+        sDownloadFile = sDownloadFile.substr(sDownloadFile.find_last_of("/")+1);
+        cout << "[D] " << sDownloadFile << " ... " << sFileTracker << endl;
+    }
 }
 
 
@@ -238,8 +266,6 @@ void Node::startNodeListener(string nodeIpAddressParm, int nodePortNumberParm)
         {
             error("[ERROR] Node Listener: Socket accept failed");
         }
-
-        //initiateFileTransfer(sSocketConnFd);
 
         // Fire Worker thread for file transfer
         thread  sWorkerThread(&Node::initiateFileTransfer,
@@ -317,8 +343,8 @@ void Node::initiateFileTransfer(int socketConnFdParm)
         sDataResp.mIndex = sChunkIndex;
 
         // send the data packet
-        cout << "[INFO] Sending Packet Index:" << sDataResp.mIndex
-             << "    Packet Size:" << sDataResp.mChunkSize << endl;
+        //cout << "[INFO] Sending Packet Index:" << sDataResp.mIndex
+        //     << "    Packet Size:" << sDataResp.mChunkSize << endl;
 
         nBytes = write(socketConnFdParm,
                        &sDataResp,
@@ -330,9 +356,11 @@ void Node::initiateFileTransfer(int socketConnFdParm)
 
     }while(1);
 
-    cout << "[INFO] Node: File Transfer Complete." << endl;
+    //cout << "[INFO] Node: File Transfer Complete." << endl;
     close(sSeedingFileFd);
     close(socketConnFdParm);
+
+    displayMenu();
 }
 
 
@@ -360,7 +388,8 @@ void Node::createTorrentFile()
     // construct SHA1 Hash of File Hash (40 Characters)
     mSeedFileInfo.mHashOfFileHash = constructHashOfHash(mSeedFileInfo.mFileHash);
 
-    string sTorrentDirPath("/Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/torrents/");
+    //string sTorrentDirPath("/Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/torrents/");
+    string sTorrentDirPath = getCurrentDirPath();
     string sTorrentFile = sTorrentDirPath +
                           mSeedFileInfo.mFile.substr(mSeedFileInfo.mFile.find_last_of("/")+1) +
                           ".mtorrent";
@@ -579,16 +608,23 @@ void Node::selectPeersAndDownload()
 
     if (sRspMsg.mResponseType == REQUEST_APPROVED)
     {
-        startDownload(sSocketFd);
+        cout << "Download Started ..." << endl;
+        thread thStartDownload(&Node::startDownload, this, sSocketFd);
+        if (thStartDownload.joinable())
+        {
+            thStartDownload.detach();
+        }
+        // Add the file into the Node Download list
+        mDownloadFilesList[mDownFileInfo.mHashOfFileHash] = to_string(mDownFileInfo.mFileSize)+":"+mDownFileInfo.mFile;
     }
+    displayMenu();
 }
 
 
 //void Node::startDownload(int socketFdParm, P2PResponseMessage_t rspMsgParm)
 void Node::startDownload(int socketFdParm)
 {
-    cout << "Download Started ..." << endl;
-
+    bool isNodeSeederFlag = false;
     int nBytes = 0;
     string sDestPath = mArg2;      // destination path to save the downloaded file
     string sDestFile = sDestPath +"/"+mDownFileInfo.mFile.substr(mDownFileInfo.mFile.find_last_of("/")+1);
@@ -605,6 +641,7 @@ void Node::startDownload(int socketFdParm)
     // get the download file info
     int sChunkHashSize = 20;
     string sFileHash = mDownFileInfo.mFileHash;
+    string sHashOfFileHash = mDownFileInfo.mHashOfFileHash;
     int sNumChunks = sFileHash.size() / sChunkHashSize;
     string sChunkHash;
     P2PDataRequest_t sDataReqMsg;
@@ -617,7 +654,7 @@ void Node::startDownload(int socketFdParm)
         sChunkHash.copy(sDataReqMsg.mReqChunkHash, sChunkHashSize);
 
         // sending message to Seeder node
-        cout << "Request for packet Index:" << sIndex << "/" << sNumChunks << endl;
+        //cout << "Request for packet Index:" << sIndex << "/" << sNumChunks << endl;
         nBytes = write(socketFdParm,
                        &sDataReqMsg,
                        sizeof(P2PDataRequest_t));
@@ -643,12 +680,35 @@ void Node::startDownload(int socketFdParm)
             }
         }while(1);
 
-        cout << "Received Packet:" << sDataRspMsg.mIndex
-             << "  Data Chunk Size:" << sDataRspMsg.mChunkSize << endl;
+        //cout << "Received Packet:" << sDataRspMsg.mIndex
+        //     << "  Data Chunk Size:" << sDataRspMsg.mChunkSize << endl;
         pwrite(sDataFileFd,
                sDataRspMsg.mData,
                sDataRspMsg.mChunkSize,
                sDataRspMsg.mIndex);
+        
+        // update the file hash table entry
+        mFileHashTable[sChunkHash] = sIndex * gChunkSize;
+
+        // show_downloads display info
+        string sFileTracker = to_string(sIndex+1)+"/"+to_string(sNumChunks)+" ["+to_string(sIndex*100/sNumChunks)+"%]";
+        mDownloadFilesTracker[sHashOfFileHash] = sFileTracker;
+        
+        // inform the tracker that this node is a seeder now
+        if (!isNodeSeederFlag)
+        {
+            mArg1 = sDestFile;
+            // Fire a thread to inform tracker that this node has some parts
+            // of the downloaded file, and ready for seeding those parts.
+            thread  sThreadInformTracker(&Node::initSeeding, this);
+
+            if (sThreadInformTracker.joinable())
+            {
+                sThreadInformTracker.detach();
+                cout << "[INFO] P2P Node: sThreadInformTracker Thread Detached" << endl;
+            }
+            isNodeSeederFlag = true;
+        }
     }
     close (sDataFileFd);
 
@@ -789,4 +849,18 @@ void Node::constructSha1Hash(IN  string fileNameParm,
 }
 
 
-
+string Node::getCurrentDirPath()
+{
+    // get the user home directory
+    char* pCurrDir = getenv("PWD");
+    string sCurrDir;
+    if (pCurrDir != NULL)
+    {
+        sCurrDir = string(pCurrDir) + "/";
+    }
+    else
+    {
+        sCurrDir = "";
+    }
+    return sCurrDir;
+}

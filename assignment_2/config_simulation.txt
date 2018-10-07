@@ -1,0 +1,6 @@
+cp ./bin/tracker ./simulation/tracker_1/
+cp ./bin/tracker ./simulation/tracker_2/
+cp ./bin/node ./simulation/node_1
+cp ./bin/node ./simulation/node_2
+cp ./bin/node ./simulation/node_3
+cp ./bin/node ./simulation/node_4

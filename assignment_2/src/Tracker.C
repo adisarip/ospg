@@ -183,10 +183,6 @@ void Tracker::processDownloadRequest(int portNumParm,
         cout << "NO_PEERS_AVAILABLE" << endl;
     }
 
-    cout << "Tracker: Tracker Response is ... ##"
-         << sMsg.mResponseType << "##"
-         << sMsg.mNodeInfoList <<   endl;
-
     int nBytes = write(mSocketConnFd, &sMsg, sizeof(TrackerResponseMessage_t));
     if (nBytes < 0)
     {

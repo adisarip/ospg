@@ -1,11 +1,20 @@
 
 ./tracker -t localhost:2000 -o localhost:2001 -s sfile.txt -f tlog.txt
-./client_node -c localhost:3000 -x localhost:2000 -y localhost:2001 -f log.txt
+./node -c localhost:3000 -x localhost:2000 -y localhost:2001 -f log.txt
+./node -c localhost:4000 -x localhost:2000 -y localhost:2001 -f log.txt
+./node -c localhost:5000 -x localhost:2000 -y localhost:2001 -f log.txt
+./node -c localhost:6000 -x localhost:2000 -y localhost:2001 -f log.txt
+
+
+start /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/data/computer_organization_and_design_5e.pdf
+get /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/simulation/node_1/computer_organization_and_design_5e.pdf.mtorrent .
+
 
 
 Testing:
 ========
 start /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/data/operating_system_concepts.pdf
+start /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/data/computer_organization_and_design_5e.pdf
 get /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/torrents/operating_system_concepts.pdf.mtorrent .
 remove /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_2/torrents/operating_system_concepts.pdf.mtorrent
 close
