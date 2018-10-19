@@ -1,4 +1,0 @@
-Use of uninitialized value $avg in numeric ge (>=) at /Users/aditya/DevHub/pgssp/2018_Monsoon/os/ospg/assignment_3/pintos_scheduling/src/utils/pintos line 909.
-WARNING: Image format was not specified for '/var/folders/ld/q8rcglgn0rdbzbwbj_n3dxzr0000gn/T/t3e0tMmMGA.dsk' and probing guessed raw.
-         Automatically detecting the format is dangerous for raw images, write operations on block 0 will be restricted.
-         Specify the 'raw' format explicitly to remove the restrictions.
