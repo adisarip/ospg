@@ -1,11 +1,6 @@
 a.out
-test/
-torrents/
 data/
-src/bkp/
-client_node
 tracker
-bkp/
+node
 obj/*.o
-README_NOTES
 todo.txt

@@ -12,9 +12,9 @@ print-%  : ; @echo $* = $($*)
 #############
 # Variables #
 #############
-CC      = g++-8
+CC      = g++
 CCFLAGS = -Wall -std=c++1z
-LDFLAGS	=  -lcrypto -lpthread
+LDFLAGS	= -lcrypto -lpthread
 INCLUDE	= -I./ -I/usr/local/opt/openssl/include/
 SRCDIR  = ./src
 OBJDIR 	= ./obj
