@@ -69,7 +69,7 @@ class Node : public Client, public Server
     string mCmd;
     string mArg1;
     string mArg2;
-    vector<string> mSeedingPeersList;
+    map<string, vector<string>> mSeedingPeersList; // <filehash, seederInfo>
     queue<int> mListeningPortsQ;
     map<string, string> mSeedingFilesList;
     map<string, string> mDownloadFilesList;

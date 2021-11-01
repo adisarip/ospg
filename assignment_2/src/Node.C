@@ -561,7 +561,7 @@ void Node::sendDownloadRequest()
     {
         // save the received nodes list in member data
         // ip_addr:port,ip_addr:port,...
-        mSeedingPeersList.push_back(string(sResponseMsg.mNodeInfoList));
+        mSeedingPeersList[mDownFileInfo.mHashOfFileHash].push_back(string(sResponseMsg.mNodeInfoList));
     }
 }
 
@@ -569,7 +569,7 @@ void Node::selectPeersAndDownload()
 {
     // @TODO: get the first seeder for now
     cout << "Selecting Peers for download ..." << endl;
-    string sSeedNodeInfo = mSeedingPeersList[0]; 
+    string sSeedNodeInfo = mSeedingPeersList[mDownFileInfo.mHashOfFileHash][0];
 
     cout << "Seeding Information: " << sSeedNodeInfo << endl;
     string sSeedNodeIpAddr = sSeedNodeInfo.substr(0, sSeedNodeInfo.find_last_of(":"));
